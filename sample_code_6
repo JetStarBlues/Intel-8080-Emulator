@@ -1,0 +1,93 @@
+/*
+	Multibyte addition
+	Enabled by 'add with carry'
+
+	As seen on pg.55 of 8080 Programming Manual
+
+	B1B2B3..BX + B1B2B3..BX
+	
+	The D register holds the number of bytes per number.
+	The numbers to be added are stored from low-order to
+	high-order byte at memory locations FIRST and SECOND
+	E.g. 32AF8A + 84BA90
+	     M[FIRST + 0] = 8A
+	     M[FIRST + 1] = AF
+	     M[FIRST + 2] = 32
+	The result is stored at M[FIRST]
+*/
+
+MVI D, 3        // load with number of bytes
+(MULTIBYTE_ADD)
+LXI BC, FIRST   // load address FIRST to BC
+LXI HL, SECOND  // load address SECOND to HL
+XRA A           // clear carry bit
+(LOOP)
+LDAX BC         // load byte of FIRST to A
+ADC M           // add with carry byte of SECOND
+STAX BC         // store result at FIRST
+DCR D           // done if D = 0
+JZ DONE
+INX BC          // point to next byte of FIRST
+INX HL          // point to next byte of SECOND
+JMP LOOP        // add next two bytes
+(DONE)
+HLT
+
+
+/*
+	Semi Binary
+*/
+
+ 0.  00DDD110  // MVI D, 3
+ 1.  00000011
+(MULTIBYTE_ADD)
+ 2.  00000001  // LXI BC, FIRST  // FIRST = 0
+ 3.  00000000
+ 4.  00000000
+ 5.  00100001  // LXI HL, SECOND  // SECOND = 10
+ 6.  00001010
+ 7.  00000000
+ 8.  10101SSS  // XRA A
+(LOOP)
+ 9.  00001010  // LDAX BC
+10.  10001110  // ADC M
+11.  00000010  // STAX BC
+12.  00DDD101  // DCR D
+13.  11001010  // JZ DONE
+14.  ...       //  21
+15.  00000000
+16.  00000011  // INX BC
+17.  00100011  // INX HL
+18.  11000011  // JMP LOOP
+19.  ...       //  9
+20.  00000000
+(DONE)
+21.  01110110  // HLT
+
+
+/*
+	Final Binary
+*/
+
+00010110  // MVI D, 3
+00000011
+00000001  // LXI BC, FIRST  // FIRST = 0
+00000000
+00000000
+00100001  // LXI HL, SECOND  // SECOND = 10
+00001010
+00000000
+10101111  // XRA A
+00001010  // LDAX BC
+10001110  // ADC M
+00000010  // STAX BC
+00010101  // DCR D
+11001010  // JZ DONE
+00010101  //  21
+00000000
+00000011  // INX BC
+00100011  // INX HL
+11000011  // JMP LOOP
+00001001  //  9
+00000000
+01110110  // HLT

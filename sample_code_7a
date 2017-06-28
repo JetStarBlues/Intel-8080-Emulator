@@ -1,0 +1,103 @@
+/*
+	Multibyte subtraction
+	Enabled by 'subtract with carry'
+
+	As seen on pg.55 of 8080 Programming Manual
+
+	B1B2B3..BX + B1B2B3..BX
+	
+	The D register holds the number of bytes per number.
+	The numbers to be added are stored from low-order to
+	high-order byte at memory locations FIRST and SECOND
+	E.g. 32AF8A + 84BA90
+	     M[FIRST + 0] = 8A
+	     M[FIRST + 1] = AF
+	     M[FIRST + 2] = 32
+	The result is stored at M[FIRST]
+*/
+
+MVI D, 3            // load with number of bytes
+CALL MULTIBYTE_ADD
+HLT
+(MULTIBYTE_ADD)
+LXI BC, FIRST       // load address FIRST to BC
+LXI HL, SECOND      // load address SECOND to HL
+XRA A               // clear carry bit
+(MADD_LOOP)
+LDAX BC             // load byte of FIRST to A
+SBB M               // add with carry byte of SECOND
+STAX BC             // store result at FIRST
+DCR D               // done if D = 0
+JZ DONE
+INX BC              // point to next byte of FIRST
+INX HL              // point to next byte of SECOND
+JMP MADD_LOOP       // add next two bytes
+(DONE)
+RET
+
+
+/*
+	Semi Binary
+*/
+
+ 0.  00DDD110  // MVI D, 3
+ 1.  00000011
+ 2.  11001101  // CALL MULTIBYTE_ADD
+ 3.  ...       //  6
+ 4.  00000000
+ 5.  01110110  // HLT
+(MULTIBYTE_ADD)
+ 6.  00000001  // LXI BC, FIRST  // FIRST = 0
+ 7.  00000000
+ 8.  00000000
+ 9.  00100001  // LXI HL, SECOND  // SECOND = 10
+10.  00001010
+11.  00000000
+12.  10101SSS  // XRA A
+(MADD_LOOP)
+13.  00001010  // LDAX BC
+14.  10011110  // SBB M
+15.  00000010  // STAX BC
+16.  00DDD101  // DCR D
+17.  11001010  // JZ DONE
+18.  ...       //  25
+19.  00000000
+20.  00000011  // INX BC
+21.  00100011  // INX HL
+22.  11000011  // JMP MADD_LOOP
+23.  ...       //  13
+24.  00000000
+(DONE)
+25.  11001001  // RET
+
+
+/*
+	Final Binary
+*/
+
+00010110  // MVI D, 3
+00000011
+11001101  // CALL MULTIBYTE_ADD
+00000110  //  6
+00000000
+01110110  // HLT
+00000001  // LXI BC, FIRST  // FIRST = 0
+00000000
+00000000
+00100001  // LXI HL, SECOND  // SECOND = 10
+00001010
+00000000
+10101111  // XRA A
+00001010  // LDAX BC
+10011110  // SBB M
+00000010  // STAX BC
+00010101  // DCR D
+11001010  // JZ DONE
+00011001  //  25
+00000000
+00000011  // INX BC
+00100011  // INX HL
+11000011  // JMP MADD_LOOP
+00001101  //  13
+00000000
+11001001  // RET

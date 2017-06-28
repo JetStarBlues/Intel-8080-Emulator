@@ -1,0 +1,95 @@
+/*
+	Multiply using shift
+	As seen on pg.54 of 8080 Programming Manual
+	x . y = z
+	x -> D
+	y -> C
+	z -> BC
+*/
+
+MVI D, 42  // Load x
+MVI C, 60  // Load y
+(MULT)
+MVI B, 0
+MVI E, 9
+(MULT0)
+MOV A, C
+RAR
+MOV C, A
+DCR E
+JZ DONE
+MOV A, B
+JNC MULT1
+ADD D
+(MULT1)
+RAR
+MOV B, A
+JMP MULT0
+(DONE)
+
+
+/* 
+	Semi Binary
+*/
+ 0.  00DDD110  // MVI D, 42
+ 1.  00101010
+ 2.  00DDD110  // MVI C, 60
+ 3.  00111100
+(MULT)
+ 4.  00DDD110  // MVI B, 0
+ 5.  00000000
+ 6.  00DDD110  // MVI E, 9
+ 7.  00001001
+(MULT0)
+ 8.  01DDDSSS  // MOV A, C
+ 9.  00011111  // RAR
+10.  01DDDSSS  // MOV C, A
+11.  00DDD101  // DCR E
+12.  11001010  // JZ DONE
+13.  ...       //  25
+14.  00000000
+15.  01DDDSSS  // MOV A, B
+16.  11010010  // JNC MULT1
+17.  ...       //  20
+18.  00000000
+19.  10000SSS  // ADD D
+(MULT1)
+20.  00011111  // RAR
+21.  01DDDSSS  // MOV B, A
+22.  11000011  // JMP MULT0
+23.  ...       //  8
+24.  00000000
+(DONE)
+25.  01110110  // HLT
+
+
+/*
+	Final Binary
+*/
+
+00010110  // MVI D, 42
+00101010
+00001110  // MVI C, 60
+00111100
+00000110  // MVI B, 0
+00000000
+00011110  // MVI E, 9
+00001001
+01111001  // MOV A, C
+00011111  // RAR
+01001111  // MOV C, A
+00011101  // DCR E
+11001010  // JZ DONE
+00011001  //  25
+00000000
+01111000  // MOV A, B
+11010010  // JNC MULT1
+00010100  //  20
+00000000
+10000010  // ADD D
+00011111  // RAR
+01000111  // MOV B, A
+11000011  // JMP MULT0
+00001000  //  8
+00000000
+01110110  // HLT
