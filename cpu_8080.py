@@ -17,6 +17,8 @@
    Inspired by,
     - Game Boy Emulation
        https://www.youtube.com/watch?v=025tC0DcFUI
+    - Minimal 8085 Single Board Computer - MiniMax8085
+       http://www.malinov.com/Home/sergeys-projects/minimax8085
 
    References used,
     - 8080 Datasheet
@@ -31,7 +33,7 @@
 '''
 
 '''
-From Docs...
+From 8080 Docs...
 
 	Flags
 		0 - carry,           set when addition result overflows or rotate/shift has shifted-out a '1'
@@ -182,14 +184,22 @@ From Docs...
 			. DAA -> 00100111 -> x -> Decimal adjust A
 
 		- Input / Output
-			. IN port  -> 11011011 -> 3 -> Input
-			. OUT port -> 11010011 -> 3 -> Output
+			. IN port  -> 11011011 -> 3 -> Input. Read byte from specified port and load to A
+			. OUT port -> 11010011 -> 3 -> Output. Places contents of A onto data bus and the
+			                                       selected port number onto the address bus
 
 		- Control
 			. EI  -> 11111011 -> 1 -> Enable interrupts
 			. DI  -> 11110011 -> 1 -> Disable interrupt
 			. HLT -> 01110110 -> 1 -> Halt
 			. NOP -> 00000000 -> 1 -> No operation
+
+		- 8085 instructions
+			. SIM -> .. -> Set interrupt mask
+			. RIM -> .. -> Read interrupt mask
+			. review AND/ANI operation, which sets the AC flag differently
+
+		- 8050 instructions
 
 	Instructions greater than 8 bits
 
@@ -317,64 +327,7 @@ From Docs...
 
 '''
 
-class Computer():
-
-	def __init__( self ):
-
-		self.dataMemory = Memory( 200 )
-		self.programMemory = Memory( 100 )
-
-
-class Register():
-
-	def __init__( self ):
-
-		self.value = 0
-
-	def read( self ):
-
-		return self.value
-
-	def readUpperByte( self ):
-
-		return ( self.value >> 8 ) & 0xff
-
-	def readLowerByte( self ):
-
-		return self.value & 0xff
-
-	def write( self, value ):
-
-		self.value = value
-
-	def writeUpperByte( self, value ):
-
-		self.value = ( self.value & 0x00ff ) | value << 8
-
-	def writeLowerByte( self, value ):
-
-		self.value = ( self.value & 0xff00 ) | value
-
-
-class Memory():
-
-	def __init__( self, size ):
-
-		self.registers = [ 0 ] * size
-
-	def read( self, address ):
-
-		return self.registers[ address ]
-
-	def write( self, address, value ):
-
-		self.registers[ address ] = value
-
-	def load( self, data ):
-
-		for i in range( len( data ) ):
-
-			self.registers[ i ] = data[ i ]
+from memory import *
 
 
 class CPU():
@@ -887,6 +840,14 @@ class CPU():
 
 		return ( hi << 8 ) | lo
 
+	def getUpperByte( self, x ):
+
+		return ( x >> 8 ) & 0xff
+
+	def getLowerByte( self, x ):
+
+		return x & 0xff
+
 	def read_A( self ):
 
 		return self.register_AF.readUpperByte()
@@ -1009,13 +970,8 @@ class CPU():
 
 	def skip2Bytes( self ):
 
-		print( '-- skipped 2bytes --')
-
-		# z = self.register_PC.read()
-		# self.register_PC.write( z + 2 )
-
-		self.fetchInstruction()
-		self.fetchInstruction()
+		z = self.register_PC.read()
+		self.register_PC.write( z + 2 )
 
 
 	# Flags ----------------------------------------------------
@@ -1089,7 +1045,7 @@ class CPU():
 
 		func, args = self.instructionLookup[ self.instruction ]
 
-		print( func, args )
+		# print( func, args )
 
 		func( *args )
 
@@ -1501,7 +1457,7 @@ class CPU():
 	# INR R -> 00DDD100 -> 1 -> Increment register
 	def INR_R( self, R, R_upper ):
 
-		savedCarry = self.flagALU_carry # according to docs, all condition flags affected except carry
+		savedCarry = self.flagALU_carry  # according to docs, all condition flags affected except carry
 		
 		if R_upper:
 
@@ -1518,7 +1474,7 @@ class CPU():
 	# INR M -> 00110100 -> 3 -> Increment memory
 	def INR_M( self ):
 
-		savedCarry = self.flagALU_carry # according to docs, all condition flags affected except carry
+		savedCarry = self.flagALU_carry  # according to docs, all condition flags affected except carry
 			
 		address = self.register_HL.read()
 
@@ -1540,7 +1496,7 @@ class CPU():
 	# DCR R -> 00DDD101 -> 1 -> Decrement register
 	def DCR_R( self, R, R_upper ):
 
-		savedCarry = self.flagALU_carry # according to docs, all condition flags affected except carry
+		savedCarry = self.flagALU_carry  # according to docs, all condition flags affected except carry
 
 		if R_upper:
 
@@ -1557,7 +1513,7 @@ class CPU():
 	# DCR M -> 00110101 -> 3 -> Decrement memory
 	def DCR_M( self ):
 
-		savedCarry = self.flagALU_carry # according to docs, all condition flags affected except carry
+		savedCarry = self.flagALU_carry  # according to docs, all condition flags affected except carry
 
 		address = self.register_HL.read()
 
@@ -1999,341 +1955,3 @@ class CPU():
 
 	# NOP -> 00000000 -> 1 -> No operation
 	def NOP( self ): pass
-
-
-
-
-# ----- Tests -----------------------------------------------------------------
-
-g = Computer()
-c = CPU( g.dataMemory, g.programMemory )
-
-
-'''
-# print( c.negate( 1 ) )
-
-for i in [ 127, 126, 2, 1, 0, 255, 254, 130, 129, 128 ]:
-
-	print( '{:<6}{}'.format( i, c.negate( i ) ) )
-'''
-
-'''
-print( c.negate( 130 )  )
-print( c.negate( 130 ) & c.negativeOne )
-print( ( - 130 ) & c.negativeOne )
-'''
-
-'''
-g.dataMemory.write( 0, 'kame' )
-g.dataMemory.write( 1, 'hameha' )
-
-print( c.read_M(1) )
-
-c.write_M( 3, 'wave' )
-
-print( g.dataMemory.registers [ 0:5 ] )
-'''
-
-'''
-c.write_A( 100 )
-c.flagALU_carry = 1
-c.register_BC.writeUpperByte( 155 )
-c.register_HL.write(2)
-c.write_M( c.register_HL.read(), 140 )
-
-# c.ADD_R( c.register_BC, True )
-# c.ADC_R( c.register_BC, True )
-c.ADD_M()
-print( c.read_A() )
-'''
-
-'''
-print( '---' )
-x = 2 - 128
-y = 2 + c.negate( 128 )
-print( x )
-print( y )
-print( x & 0xff )
-print( c.negate( x ) )
-print( '---' )
-c.updateALUFlags( x )
-print( '---' )
-c.updateALUFlags( y )
-'''
-
-'''
-# c.write_A( 2 )
-c.write_A( 64 )
-c.flagALU_carry = 1
-print( bin( c.read_A() )[2:].zfill( c.nBits ), c.flagALU_carry )
-# c.RRC()
-# c.RAR()
-# c.RLC()
-c.RAL()
-print( bin( c.read_A() )[2:].zfill( c.nBits ), c.flagALU_carry )
-'''
-
-program_0 = [
-		
-	# Multiply using shift
-	# As seen on pg.54 of 8080 Programming Manual
-	# x . y = z
-	# x -> D
-	# y -> C
-	# z -> BC
-	0b00010110,  # MVI D, 42
-	0b00101010,
-	0b00001110,  # MVI C, 60
-	0b00111100,
-	0b00000110,  # MVI B, 0
-	0b00000000,
-	0b00011110,  # MVI E, 9
-	0b00001001,
-	0b01111001,  # MOV A, C
-	0b00011111,  # RAR
-	0b01001111,  # MOV C, A
-	0b00011101,  # DCR E
-	0b11001010,  # JZ DONE
-	0b00011001,  #  25
-	0b00000000,
-	0b01111000,  # MOV A, B
-	0b11010010,  # JNC MULT1
-	0b00010100,  #  20
-	0b00000000,
-	0b10000010,  # ADD D
-	0b00011111,  # RAR
-	0b01000111,  # MOV B, A
-	0b11000011,  # JMP MULT0
-	0b00001000,  #  8
-	0b00000000,
-	0b01110110,  # HLT
-]
-def printOutput_0():
-
-	print( '>>', c.register_BC.read() )
-
-program_1 = [
-
-	# Fibonnaci Sequence
-	#  0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610
-	0b00000110,  # MVI B, 12
-	0b00001100,
-	0b00100001,  # LXI HL, 0
-	0b00000000,
-	0b00000000,
-	0b00110110,  # MVI M, 0
-	0b00000000,
-	0b00100011,  # INX HL
-	0b00110110,  # MVI M, 1
-	0b00000001,
-	0b00101011,  # DCX HL
-	0b01111110,  # MOV A, M
-	0b00100011,  # INX HL
-	0b10000110,  # ADD M
-	0b00100011,  # INX HL
-	0b01110111,  # MOV M, A
-	0b00000101,  # DCR B
-	0b11000010,  # JNZ LOOP
-	0b00001010,  # 10
-	0b00000000,
-	0b01110110,  # HLT
-]
-def printOutput_1():
-
-	b = 0  # memory base location for results
-	n = 12 # n items
-	for i in range( 2 + n ):
-		print( '>>', c.read_M( b + i ) )
-
-program_2 = [
-
-	# 16 bit subtraction
-	# Enabled by 'subtract with borrow'
-	0b00000001,  # LXI BC, 0x22DB
-	0b11011011,
-	0b00100010,
-	0b00010001,  # LXI DE, 0x1AF9
-	0b11111001,
-	0b00011010,
-	0b00110111,  # STC
-	0b00111111,  # CMC
-	0b01111001,  # MOV A, C
-	0b10011011,  # SBB E
-	0b01101111,  # MOV L, A
-	0b01111000,  # MOV A, B
-	0b10011010,  # SBB D
-	0b01100111,  # MOV H, A
-	0b01110110,  # HLT
-]
-def printOutput_2():
-
-	print( '>>', c.register_HL.read() )
-
-program_3 = [
-
-	# Multibyte addition
-	# Enabled by 'add with carry'
-	# As seen on pg.55 of 8080 Programming Manual
-	0b00010110,  # MVI D, 3
-	0b00000011,
-	0b00000001,  # LXI BC, FIRST  # FIRST = 0
-	0b00000000,
-	0b00000000,
-	0b00100001,  # LXI HL, SECOND  # SECOND = 10
-	0b00001010,
-	0b00000000,
-	0b10101111,  # XRA A
-	0b00001010,  # LDAX BC
-	0b10001110,  # ADC M
-	0b00000010,  # STAX BC
-	0b00010101,  # DCR D
-	0b11001010,  # JZ DONE
-	0b00010101,  #  21
-	0b00000000,
-	0b00000011,  # INX BC
-	0b00100011,  # INX HL
-	0b11000011,  # JMP LOOP
-	0b00001001,  #  9
-	0b00000000,
-	0b01110110,  # HLT
-]
-def init_3():
-	
-	c.write_M( 0, 0x8a )
-	c.write_M( 1, 0xaf )
-	c.write_M( 2, 0x32 )
-
-	c.write_M( 10, 0x90 )
-	c.write_M( 11, 0xba )
-	c.write_M( 12, 0x84 )
-
-def printOutput_3():
-
-	b = 0
-	n = 3
-	out = 0
-	for i in range( n ):
-		by = c.read_M( b + i )
-		print( '>', by )
-		out |= by << 8 * i
-	print( '>>', out )
-
-program_4 = [
-
-	# Multibyte subtraction
-	# Enabled by 'subtract with borrow'
-	# As seen on pg.55 of 8080 Programming Manual
-	0b00010110,  # MVI D, 3
-	0b00000011,
-	0b00000001,  # LXI BC, FIRST  # FIRST = 0
-	0b00000000,
-	0b00000000,
-	0b00100001,  # LXI HL, SECOND  # SECOND = 10
-	0b00001010,
-	0b00000000,
-	0b10101111,  # XRA A
-	0b00001010,  # LDAX BC
-	0b10011110,  # SBB M
-	0b00000010,  # STAX BC
-	0b00010101,  # DCR D
-	0b11001010,  # JZ DONE
-	0b00010101,  #  21
-	0b00000000,
-	0b00000011,  # INX BC
-	0b00100011,  # INX HL
-	0b11000011,  # JMP LOOP
-	0b00001001,  #  9
-	0b00000000,
-	0b01110110,  # HLT
-]
-def init_4():
-	
-	c.write_M( 0, 0x01 )
-	c.write_M( 1, 0x13 )
-	c.write_M( 2, 0x20 )
-
-	c.write_M( 10, 0x03 )
-	c.write_M( 11, 0x05 )
-	c.write_M( 12, 0x00 )
-
-program_5 = [
-
-	# Multibyte subtraction
-	# Testing CALL and RET
-	0b00010110,  # MVI D, 3
-	0b00000011,
-	0b11001101,  # CALL MULTIBYTE_ADD
-	0b00000110,  #  6
-	0b00000000,
-	0b01110110,  # HLT
-	0b00000001,  # LXI BC, FIRST  # FIRST = 0
-	0b00000000,
-	0b00000000,
-	0b00100001,  # LXI HL, SECOND  # SECOND = 10
-	0b00001010,
-	0b00000000,
-	0b10101111,  # XRA A
-	0b00001010,  # LDAX BC
-	0b10011110,  # SBB M
-	0b00000010,  # STAX BC
-	0b00010101,  # DCR D
-	0b11001010,  # JZ DONE
-	0b00011001,  #  25
-	0b00000000,
-	0b00000011,  # INX BC
-	0b00100011,  # INX HL
-	0b11000011,  # JMP MADD_LOOP
-	0b00001101,  #  13
-	0b00000000,
-	0b11001001,  # RET
-]
-def init_5():
-
-	c.register_SP.write( 100 )
-	init_4()
-
-
-programs = [
-
-	{ 'instructions' : program_0, 'init' : None,   'printOutput' : printOutput_0 },
-	{ 'instructions' : program_1, 'init' : None,   'printOutput' : printOutput_1 },
-	{ 'instructions' : program_2, 'init' : None,   'printOutput' : printOutput_2 },
-	{ 'instructions' : program_3, 'init' : init_3, 'printOutput' : printOutput_3 },
-	{ 'instructions' : program_4, 'init' : init_4, 'printOutput' : printOutput_3 },
-	{ 'instructions' : program_5, 'init' : init_5, 'printOutput' : printOutput_3 },
-]
-
-def runProgram( pIdx ):
-
-	program = programs[ pIdx ][ 'instructions' ]
-	init = programs[ pIdx ][ 'init' ]
-	printOutput = programs[ pIdx ][ 'printOutput' ]
-
-	c.programMemory.load( program )
-	# print( c.programMemory.registers[ : len( program ) ] )
-	# print( '' )
-
-	if init: init()
-
-	iteration = 0
-	while not c.halt:
-		
-		iteration += 1
-		print( 'iteration -', iteration )
-		
-		c.fetchInstruction()
-		c.executeInstruction()
-
-		print( 'A  ', c.read_A() )
-		print( 'B  ', c.register_BC.readUpperByte() )
-		print( 'C  ', c.register_BC.readLowerByte() )
-		print( 'D  ', c.register_DE.readUpperByte() )
-		print( 'E  ', c.register_DE.readLowerByte() )
-		print( 'H  ', c.register_HL.readUpperByte() )
-		print( 'L  ', c.register_HL.readLowerByte() )
-		print( 'CY ', c.flagALU_carry )
-		print( '' )
-
-	printOutput()
-
-runProgram( 5 )
