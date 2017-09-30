@@ -2,7 +2,7 @@
 # 
 #  Description:
 # 
-#     Terminal Emulator
+#     UART Emulator
 # 
 #  Attribution:
 # 
@@ -12,14 +12,6 @@
 #  the above attribution notice and this condition.
 # 
 # ========================================================================================
-
-''' 
-Notes
-
-	- Python 3 code
-	- To exit cleanly use CTRL+Z.
-	   CTRL+C doesn't cleanly kill threads (i.e you'll get an error message)
-'''
 
 '''
      ________                 _________
@@ -46,104 +38,88 @@ Notes
 import threading
 
 
-class Terminal:
+class UART:
+
+	# Simple Intel 8251 emulation. Treat data as parallel
 
 	def __init__( self ):
 
+		self.name = ''  # debug
+		
 		self.on = True
 
-		self.txData = None
+		self.databus = None
 		self.rxData = None
+		self.txData = None
 
-		self.rxReady = 0
-		self.clk     = 0
-
-		# self.sampleFrequency = 2  # seconds
+		self.rd  = 0
+		self.wr  = 0
+		self.clk = 0
 
 		self.setupThreads()
 
 
 	def setupThreads( self ):
 
-		# Handle as threads to emulate concurrency of physical wires
+		# Use of threads to emulate concurrency of physical wires
 
 		t1 = threading.Thread(
 
-			name = 'tx_thread',
-			target = self.transmit
+			name = 'uart{}_rd_thread'.format( self.name ),
+			target = self.sampleRD
 		)
 
-		# t2 = threading.Thread(
+		t2 = threading.Thread(
 
-		# 	name = 'rx_thread',
-		# 	target = self.receive
-		# )
-
-		t3 = threading.Thread(
-
-			name = 'rxReady_thread',
-			target = self.sampleRxReady
+			name = 'uart{}_wr_thread'.format( self.name ),
+			target = self.sampleWR
 		)
 
 		t1.start()
-		# t2.start()
-		t3.start()
+		t2.start()
 
 
-	def sampleRxReady( self ):
+	def sampleRD( self ):
 
 		while self.on:
 
-			if self.clk and self.rxReady:
+			if self.clk and self.rd:
 
 				self.receive()
 
 		print( '{} has exited'.format( threading.current_thread().getName() ) )  # debug
 
 
-	def receive( self ):
-
-		# print( self.rx, end = '' )
-		print( 'Receiving {}'.format( self.rxData ) )  # debug
-
-
-	def transmit( self ):
+	def sampleWR( self ):
 
 		while self.on:
 
-			# Get user input
-			try:
+			if self.clk and self.wr:
 
-				user_input = input()
-
-			# Exit conditions
-			except EOFError:  # User pressed CTRL+C or CTRL+Z
-
-				self.exit()
-				break
-
-			# Append newline character (omitted by input())
-			user_input += '\n'
-
-			# Python input() can receive arbitrary length input from user
-			#  We want to send it out one character at a time '''
-			for c in user_input:
-
-				# Drive TX line
-				self.txData = c
-
-				print( 'Transmitting {}'.format( c ) )  # debug
-
-				# sleep( self.clockPeriod )
+				self.transmit()
 
 		print( '{} has exited'.format( threading.current_thread().getName() ) )  # debug
 
 
-	def exit( self ):
+	def transmit( self ):
+
+		# Send data in databus
+		self.txData = self.databus
+
+		print( 'Transmitting {}'.format( self.databus ) )  # debug
+
+
+	def receive( self ):
+
+		# Read data onto databus
+		self.databus = self.rxData
+
+		print( 'Receiving {}'.format( self.rxData ) )  # debug
+
+
+	def exit( self ):  # To cleanly close threads
 
 		self.on = False
-
-		print( 'See you later!' )
 
 
 
@@ -151,18 +127,27 @@ class Terminal:
 
 from time import sleep, time
 
-term = Terminal()
-term.rxReady = 1
-# term.rxData = "greetings"
+uart = UART()
+uart.databus = 5
+uart.wr = 1
+# uart.rd = 1
 
 clock = 0
 startTime = time()
-while time() - startTime < 1:
-	
+while True:
+
+	elapsedTime = time() - startTime
+
+	if elapsedTime >= 5:
+
+		break
+
 	clock ^= 1   # tick/tock
 
-	sleep( 0.5 )  # pulse width
+	uart.clk = clock
 
-	term.clk = clock
+	print( clock, elapsedTime )
 
-term.exit()
+	sleep(1)  # pulse width
+
+uart.on = False

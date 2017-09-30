@@ -8,7 +8,7 @@
 # 
 #     Code by www.jk-quantized.com
 # 
-#  Redistributions and use of this code in source and binary forms must retain
+#  Redistribution and use of this code in source and binary forms must retain
 #  the above attribution notice and this condition.
 # 
 # ========================================================================================
@@ -199,7 +199,9 @@ From 8080 Docs...
 			. RIM -> .. -> Read interrupt mask
 			. review AND/ANI operation, which sets the AC flag differently
 
-		- 8050 instructions
+		- 8051 instructions
+			. interrupts
+			. timers
 
 	Instructions greater than 8 bits
 
@@ -334,13 +336,41 @@ class CPU():
 
 	def __init__( self, dataMemory, programMemory ):
 
-		# self.emulateStates = False
-		self.halt = False  # temp for now
+		# Control signals (wip) ----------------------------------
 
+		self.halt = False  # temp for now
+		# self.hold = False  # facilitates DMA by peripherals
+
+		# IO
+		self.IO_RD = 0  # output
+		self.IO_WR = 0  # output
+
+		# interrupts, p.2-3 8085 User Man
+		# self.intr = 0  # maskable(can be en/disabled by EI or DI), something about RST
+		# self.rst55 = 0 # maskable through SIM
+		# self.rst65 = 0
+		# self.rst75 = 0
+		# self.trap = 0
+
+		# self.flagCC_databusIn        = None  # out
+		# self.flagCC_ready            = None  # in
+		# self.flagCC_wait             = None  # out
+		# self.flagCC_write            = None  # out
+		# self.flagCC_hold             = None  # in
+		# self.flipflop_holdAck         = None  # out
+		# self.flipflop_interruptEnable = None  # out
+		# self.flagCC_interruptRequest = None  # in
+		# self.flagCC_reset            = None  # in
+
+
+		# Peripherals --------------------------------------
 		self.dataMemory = dataMemory
 		self.programMemory = programMemory
 
-		self.dataBus = None # bidirectional
+
+		# Components ---------------------------------------
+		self.addressBus = None  # 16bit. However only using it for IO so treat as 8bit
+		self.dataBus = None  # 8bit, bidirectional
 
 		self.register_AF = Register()  # accumulator & flags
 		self.register_BC = Register()  # general purpose
@@ -349,28 +379,22 @@ class CPU():
 		self.register_SP = Register()  # stack pointer
 		self.register_PC = Register()  # program counter
 
+
+		# Helpers ------------------------------------------
+		self.nBits = 8
+		self.largestInt = 2 ** ( self.nBits - 1 ) - 1
+		self.negativeOne = 2 ** self.nBits - 1  # two's complement
+
 		self.flagALU_carry    = 0
 		self.flagALU_parity   = 0
 		self.flagALU_auxCarry = 0
 		self.flagALU_zero     = 0
 		self.flagALU_sign     = 0
-
-		self.flagCC_databusIn        = None  # out
-		self.flagCC_ready            = None  # in
-		self.flagCC_wait             = None  # out
-		self.flagCC_write            = None  # out
-		self.flagCC_hold             = None  # in
-		self.flipflop_holdAck         = None  # out
-		self.flipflop_interruptEnable = None  # out
-		self.flagCC_interruptRequest = None  # in
-		self.flagCC_reset            = None  # in
-
-		self.nBits = 8
-		self.largestInt = 2 ** ( self.nBits - 1 ) - 1
-		self.negativeOne = 2 ** self.nBits - 1  # two's complement
-
+		
 		self.instruction = None
 
+
+		# Instruction decode -------------------------------
 		self.instructionLookup = {
 
 			# Move, load, store ---
@@ -1922,17 +1946,30 @@ class CPU():
 
 	# Input / Output ---
 
-	# IN port -> 11011011 -> 3 -> Input
-	def IN_Port( self ):
+	# IN port -> 11011011 -> 3 -> Input. Read byte from specified port and load to A
+	def IN( self ):
 
-		# self.write_A( self.dataBus )
-		pass
+		byte2 = self.fetchInstruction()  # get port number. Used to select IO device
+		self.addressBus = byte2
 
-	# OUT port -> 11010011 -> 3 -> Output
-	def OUT_Port( self ):
+		self.IO_WR = 1                   # signal IO device to write to databus
 
-		# self.dataBus = self.read_A()
-		pass
+		self.write_A( self.dataBus )     # get data placed on databus by IO device
+
+		self.IO_WR = 0                   # signal IO device to stop writing to databus
+
+	# OUT port -> 11010011 -> 3 -> Output. Places contents of A onto data bus and the
+	#                                      selected port number onto the address bus
+	def OUT( self ):
+
+		byte2 = self.fetchInstruction()  # get port number. Used to select IO device
+		self.addressBus = byte2
+
+		self.dataBus = self.read_A()     # place contents of A onto databus
+
+		self.IO_RD = 1                   # signal IO device to read from databus
+
+		self.IO_RD = 0                   # signal IO device to stop reading from databus
 
 
 	# Control ---
@@ -1940,12 +1977,14 @@ class CPU():
 	# EI -> 11111011 -> 1 -> Enable interrupts (takes effect next instruction)
 	def EI( self ):
 
-		self.flagCC_interruptEnable = 1
+		# self.flagCC_interruptEnable = 1
+		pass
 
 	# DI -> 11110011 -> 1 -> Disable interrupt (takes effect immediately)
 	def DI( self ):
 
-		self.flagCC_interruptEnable = 0
+		# self.flagCC_interruptEnable = 0
+		pass
 
 	# HLT -> 01110110 -> 1 -> Halt
 	def HLT( self ):
