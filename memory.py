@@ -1,50 +1,50 @@
-class Register():
+class Register ():
 
-	def __init__( self ):
+	def __init__ ( self ):
 
 		self.value = 0
 
-	def read( self ):
+	def read ( self ):
 
 		return self.value
 
-	def readUpperByte( self ):
+	def readUpperByte ( self ):
 
 		return ( self.value >> 8 ) & 0xff
 
-	def readLowerByte( self ):
+	def readLowerByte ( self ):
 
 		return self.value & 0xff
 
-	def write( self, value ):
+	def write ( self, value ):
 
 		self.value = value
 
-	def writeUpperByte( self, value ):
+	def writeUpperByte ( self, value ):
 
 		self.value = ( self.value & 0x00ff ) | value << 8
 
-	def writeLowerByte( self, value ):
+	def writeLowerByte ( self, value ):
 
 		self.value = ( self.value & 0xff00 ) | value
 
 
-class RAM():
+# class RAM ():
 
-	def __init__( self, size ):
+# 	def __init__ ( self, size ):
 
-		self.registers = [ 0 ] * size
+# 		self.registers = [ 0 ] * size
 
-	def read( self, address ):
+# 	def read ( self, address ):
 
-		return self.registers[ address ]
+# 		return self.registers[ address ]
 
-	def write( self, address, value ):
+# 	def write ( self, address, value ):
 
-		self.registers[ address ] = value
+# 		self.registers[ address ] = value
 
-	def load( self, data ):
+# 	def load ( self, data ):
 
-		for i in range( len( data ) ):
+# 		for i in range( len( data ) ):
 
-			self.registers[ i ] = data[ i ]
+# 			self.registers[ i ] = data[ i ]

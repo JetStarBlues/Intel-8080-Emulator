@@ -1,0 +1,348 @@
+'''
+8085 Programmer's Manual
+
+( labelName: ) opCode operand ;comment
+
+azAZ09
++-*/,()'&:$@?=<>%! ;.
+CR (carriage return)
+FF (form feed)
+HT (horizontal tab)
+
+' '+	field separator or symbol terminator
+HT		field separator or symbol terminator
+CR 		statement terminator
+,		separates operands 
+'..'	character string
+(..)	expression
+; 		comment
+:		delimiter for symbols used as labels
+&		delimit macro prototype text or formal parameters for concatenation?
+<..>	delimit macro parameter text which contains commas or embedded blanks?
+		Also used to delimit a parameter list
+%		delimit macro parameter that is to be evaluated prior to substitution?
+!		escape character. Pass the following character as part of macro parameter
+		when the character might otherwise be interpreted as delimiter
+;;		delimiter for comments in macro definitions when the comment is to be
+		suppressed when the macro is expanded
+
+
+labelName -> [\?][@][azAZ09\?]*:
+             one to six char in length
+SET/EQU/MACROName -> same convention as labelName except end with space instead of colon
+
+Reserved symbols
+	- A..E,H,L   (registers)
+	- SP
+	- PSW (program status word, contents of A and status flags)
+	- M
+
+Relocatable symbols - external and public?
+
+Data
+	- Hexadecimal
+		. must begin with numeric digit (0..9) and end with 'H'
+	- Decimal
+		. terminal 'D' optional
+	- Octal
+		. terminal 'O' or 'Q'
+	- Binary
+		. terminal 'B'
+	- ASCII constant
+		. one or more characters enclosed in single quotes
+		. two successive quotes can be used to rep a single quote
+		  ex. 'Today''s date'
+
+$  location counter
+   ex.
+     GO: JMP $+6   ; jump to address 6 bytes beyond
+                   ; first byte of this instruction
+
+
+TRUE  11111111
+FALSE 00000000
+
+Assembly time expression evaluation
+	- all perform unsigned
+	  	. ex. negative number always greater than positive cause higher MSB
+	- arithmetic
+	    . + - * / MOD
+	- shift
+	    . SHR, SHL
+	    . x SHR nBits
+	    . logical shifts
+	- logical
+	    . NOT, AND, OR, XOR
+	- compare
+	    . EQ, NE, LT, LE, GT, GE, NUL
+	    . ex. IF FIELD1 EQ FIELD2
+	- byte isolation
+		. HIGH, LOW
+		. access respective bytes of a 16-bit value
+		. ex. IF HIGH ADRS EQ 0
+
+	ex. LXI H,LIST+6  ; load seventh item into HL registers
+	ex. 5+30*(25/5)
+	ex. 20 MOD 8
+
+	- each term treated as two-byte (16-bit) value. Thus range is
+	  0H..OFFFFH
+
+	- operator precedence
+		. P
+		. DM, MOD, SHL, SHR
+		. AS
+		. comparison
+		. logical  NOT, AND, OR, XOR
+
+Relocatable expression
+	... p54
+
+Two pass
+	. everything must be resolvable in two passes
+	. ex.
+	  ; valid
+	  X EQU Y
+	  Y EQU 99
+
+	  ;not valid
+	  X EQU Z  ; X cannot be resolved in two passes
+	  Z EQU Y
+	  Y EQU 99	  
+
+Directives
+	- Symbol definition
+		. SET
+		. EQU
+	- Data definition
+		. DB
+		. DW
+	- Memory reservation
+		. DS
+	- Conditional assembly
+		. IF
+		. ELSE
+		. ENDIF
+	- Assembler termination
+		. END
+	- Location counter control
+		. ASEG
+		. DSEG
+		. CSEG
+		. ORG
+	- Program linkage
+		. PUBLIC
+		. EXTRN
+		. NAME
+		. STKLN
+	- Macros
+		. MACRO
+		. ENDM
+		. LOCAL
+		. REPT
+		. IRP
+		. IRPC
+		. EXITM
+
+
+	EQU
+		. defined only once
+		. ex
+			TRUE EQU OFFH  ; assigns 11111111 to TRUE
+
+	SET
+		. can be redefined
+		. ex
+			IMMED  SET  5
+			       ADI  IMMED
+			IMMED  SET  90-8
+			       ADI  IMMED
+
+	DB
+		. define byte
+		. stores specified data in consecutive memory locations starting with
+		  the current setting of the location counter
+		. optional label. If present, assigned current value of location counter
+		  and thus references first stored byte
+		. ex
+			STR:   DB  'TIME'     ; label STR refers to letter T, STR+1 to I etc.
+			HERE:  DB  0A3H
+			WRD:   DB  0FDH,0AH
+
+			ALPHA:  DB    'XYZ'
+			        LXI   B,    ALPHA  ; load address of ALPHA into registers BC
+			        LDAX  B            ; load accumulator with byte stored at Memory[ BC ]
+			                           ; i.e. 'X'
+			        INX   B            ; increment address stored in BC
+			        LDAX  B            ; load accumulator with 'Y'
+
+	DW
+		. define word
+		. optional label
+		. storage order...
+		  LOW
+		  HIGH
+		  LOW
+		  HIGH
+		  ...
+		  . as such characters in string stored in reverse order...
+		. ex
+			ST:  DW  'A','AB'   ; Memory[?] = 41, 00, 42, 41
+
+	DS
+		. define block of storage
+		. optional label
+		. unlike DB,DW assembles no data into program?
+		. reserves memory by incrementing the location counter
+		. ex
+			TTYBUF:  DS  72  ; reserve 72 bytes for a terminal output buffer
+
+			; if wanted shorthand for access, can define additional symbols,
+			RID   EQU  TTYBUF     ; record identifier
+			NAME  EQU  TTYBUF+6   ; employee name
+			NUN   EQU  TTYBUF+26  ; employee number
+
+	IF, ELSE, ENDIF
+		. allow to assemble portions of program conditionally
+		. can nest
+		. ex
+			IF TYPE EQ 0
+				...
+			ENDIF
+	
+	END
+		. identifies end of source
+		. if optional expression is present, it's used as starting address of program
+
+	Location Counter
+		. location counter performs same fx as pc during execution. It tells the
+		  assembler the next memory location avail for instr or data assembly
+		. initial value of 0
+	
+		ASEG
+			. something... specifies non-relocatable mode
+
+		ORG
+			. sets location counter to value specified
+			. if optional label present, assigned value of location counter
+			  before it is updated
+
+		Relocatability
+			. something or other
+
+Macros
+
+	. analogous to function
+	. when called, replaces the call with expansion...
+	. unlike subroutines which branch, macros generate inline code
+	. changing parameter changes code generated
+	. can be nested
+
+	. concept ex
+		CNFIRM
+			Airstar welcomes you!
+			Your flight (FNO) leaves at DTIME and arrives in DEST at ATIME
+		GREET
+			Dear NAME:
+		
+		; message
+		GREET 'Bertha'
+		CNFIRM 123, '10:54', 'Curacao', '11:53'
+		We trust you will enjoy your flight.
+
+		Sincerely,
+
+	MACRO
+		. ex
+			MAC     MACRO  P1,P2,P3  ; MAC accepts three parameters P1, P2, P3
+			        LOCAL MOVES      ; Mark label as local so that unique to instance
+			MOVES:  LHLD   P1
+			        MOV    A,M
+			        LHLD   P2
+			        MOV    B,M
+			        LHLD   P3
+			        MOV    C,M
+			        ENDM
+
+	LOCAL
+		. mark label as unique to current macro expansion. Each time macro
+		  expanded, assembler assigns each local symbol a globally unique symbol
+		  ex. ??001, ??002
+	
+	REPT
+		. repeat block n times
+		. ex
+			ROTR6:  REPT  6
+			        RRC
+			        ENDM
+
+			; multiplication
+			MUL:     MVI    D,0
+			         LXI    H,0
+
+			         REPT   7
+			         LOCAL  SKIPAD
+			         RLC
+			         JNC    SKIPAD
+			         DAD    D
+			SKIPAD:  DAD    H
+			         ENDM
+
+			         RLC
+			         RNC
+			         DAD    D
+			         RET
+
+	IRP
+		.indefinite repeat
+		. ex
+			LXI  H, 9000
+			IRP  X,<J,K,L>
+			LDA  X
+			MOV  M,A
+			INX  H
+			ENDM
+
+			generates...
+			LXI  H, 9000
+			LDA  J
+			MOV  M,A
+			INX  H
+			LDA  K
+			MOV  M,A
+			INX  H
+			LDA  L
+			MOV  M,A
+			INX  H
+
+	IRPC
+		. indefinite repeat character
+		. ex
+			LHLD 9000
+			IRPC '2010'
+			INX  H
+			MVI  M,X
+			ENDM
+
+			generates...
+			LHLD 9000
+			IRPC '2010'
+			INX  H
+			MVI  M,'2'
+			INX  H
+			MVI  M,'0'
+			INX  H
+			MVI  M,'1'
+			INX  H
+			MVI  M,'0'
+
+	EXITM
+		. ...
+
+Special operators
+	. <>  -> delimit text (such as lists) that contain other delimiters
+	. !   -> escape character
+	. &   -> concatenate text and parameters?
+	. NUL -> ...
+
+'''

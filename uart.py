@@ -138,7 +138,7 @@ while True:
 
 	elapsedTime = time() - startTime
 
-	if elapsedTime >= 5:
+	if elapsedTime >= 3:
 
 		break
 
@@ -148,6 +148,6 @@ while True:
 
 	print( clock, elapsedTime )
 
-	sleep(1)  # pulse width
+	sleep( 0.5 )  # pulse width
 
 uart.on = False

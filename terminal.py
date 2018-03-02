@@ -1,168 +1,177 @@
-# ========================================================================================
-# 
-#  Description:
-# 
-#     Terminal Emulator
-# 
-#  Attribution:
-# 
-#     Code by www.jk-quantized.com
-# 
-#  Redistributions and use of this code in source and binary forms must retain
-#  the above attribution notice and this condition.
-# 
-# ========================================================================================
-
-''' 
-Notes
-
-	- Python 3 code
-	- To exit cleanly use CTRL+Z.
-	   CTRL+C doesn't cleanly kill threads (i.e you'll get an error message)
+'''
+	input  -> keyboard
+	output -> display
 '''
 
-'''
-     ________                 _________
-    |        |               |         |
-    |        |               |         |   txData
-    |        |    databus    |         | ----------->
-    | DEVICE | <-----------> |         |
-    |        |               |         |   rxData
-    |        |    rd         |         | <----------
-    |        | ------------> |  UART   |
-    |        |               |         |
-    |        |    wr         |         |
-    |        | ------------> |         |
-    |        |               |         |
-    |        |               |         |
-    |________|               |_________|
-                                  ^
-                                  |
-                                  |
-                                  clk
-'''
-
-
+import tkinter
 import threading
 
+class Terminal():
 
-class Terminal:
+	def __init__ ( self, width=400, height=400, CPU=None ):
 
-	def __init__( self ):
+		self.CPU = CPU
 
-		self.on = True
+		self.keyBuffer = []
+		self.displayBuffer = ''
 
-		self.txData = None
-		self.rxData = None
+		self.K_CTRL_C    = 0x03
+		self.K_BACKSPACE = 0x08
+		self.K_ENTER     = 0x0A
 
-		self.rxReady = 0
-		self.clk     = 0
+		# teletype keys?
+		self.K_CR      = 0x0D  # used as end-of-(line,string,input) marker in TB
+		self.K_RUB_OUT = 0x7F  # backspace
 
-		# self.sampleFrequency = 2  # seconds
+		self.debugMode = False
 
-		self.setupThreads()
+		self.tkRoot = None
+		self.tkWidth = width
+		self.tkHeight = height
+		self.tkTextBox = None
+
+		threading.Thread(
+
+			target = self.setupTkinter,
+			name = 'tk_thread'
+
+		).start()
 
 
-	def setupThreads( self ):
+	# Communication -----------------------------------
 
-		# Handle as threads to emulate concurrency of physical wires
+	def transmit ( self ):
 
-		t1 = threading.Thread(
+		# Send data to CPU
 
-			name = 'tx_thread',
-			target = self.transmit
+		if len( self.keyBuffer ) > 0:
+
+			return self.keyBuffer.pop()
+
+		else:
+
+			return 0
+
+	def receive ( self, data ):
+
+		# Receive data from CPU
+
+		self.displayCharacter( data )
+
+	def sendInterrupt ( self, isrLoc ):
+
+		'''
+			Real procedure,
+			  set INT high
+			  send RST instr
+			  set INT low
+			  ISR code will call IN to get data
+		'''
+
+		self.CPU.jumpToISR( isrLoc )
+
+
+	# Keypress ----------------------------------------
+
+	def addKeyToBuffer ( self, key ):
+
+		self.keyBuffer.insert( 0, key )
+
+		# self.sendInterrupt()  # interrupt vs waiting for poll
+		
+
+	def handleKeypress ( self, event ):
+
+		char = event.char
+		keyCode = ord( char )
+
+		if keyCode == self.K_CTRL_C:
+
+			self.addKeyToBuffer( keyCode )  # send to TB
+
+			return
+
+		elif keyCode == self.K_BACKSPACE:  
+
+			self.addKeyToBuffer( self.K_RUB_OUT )  # send to TB
+
+			if len( self.displayBuffer ) > 0:
+
+				self.displayBuffer = self.displayBuffer[ : - 1 ]  # remove from display buffer
+
+		elif keyCode == self.K_ENTER:
+
+			self.addKeyToBuffer( self.K_CR )  # send to TB
+
+			self.displayBuffer += char  # echo
+
+		elif keyCode >= 32 and keyCode <= 126:
+
+			self.addKeyToBuffer( keyCode )  # send to TB
+
+			self.displayBuffer += char  # echo
+
+		else:
+
+			# print( 'Key not handled - {}'.format( keyCode ) )
+
+			return
+
+		self.updateDisplay()
+
+
+	# Display -----------------------------------------
+
+	def displayCharacter ( self, data ):
+
+		if self.debugMode:
+
+			print( 'tkRaw ->', data )
+
+		if data >= 32 and data <= 126:
+
+			self.displayBuffer += chr( data )
+
+		elif data == self.K_CR:
+
+			self.displayBuffer += '\n'
+
+		self.updateDisplay()
+
+	def setupTkinter( self ):
+
+		self.tkRoot = tkinter.Tk()
+
+		self.tkRoot.config( width = self.tkWidth, height = self.tkHeight )
+		self.tkRoot.title( '8080 Sim' )
+
+		self.tkTextBox = tkinter.Label( self.tkRoot )
+		self.tkTextBox.place( relx = 0, rely = 0 )
+		self.tkTextBox.config(
+			wraplength = self.tkWidth - 5,
+			justify = tkinter.LEFT
 		)
 
-		# t2 = threading.Thread(
+		textColor = "#689497"
+		bgColor = "#fff4dc"
+		self.tkTextBox.config( fg = textColor, bg = bgColor )
+		self.tkRoot.config( bg = bgColor )
 
-		# 	name = 'rx_thread',
-		# 	target = self.receive
-		# )
+		self.tkTextBox[ 'text' ] = self.displayBuffer
 
-		t3 = threading.Thread(
+		self.tkRoot.bind( '<KeyPress>', self.handleKeypress )
 
-			name = 'rxReady_thread',
-			target = self.sampleRxReady
-		)
+		self.tkRoot.protocol( 'WM_DELETE_WINDOW', self.quitTkinter )
 
-		t1.start()
-		# t2.start()
-		t3.start()
+		self.tkRoot.mainloop()
 
+	def quitTkinter( self ):
 
-	def sampleRxReady( self ):
+		self.tkRoot.quit()
 
-		while self.on:
+		# print( 'See you later!' )
+		print( 'Tkinter has exited' )
 
-			if self.clk and self.rxReady:
+	def updateDisplay( self ):
 
-				self.receive()
-
-		print( '{} has exited'.format( threading.current_thread().getName() ) )  # debug
-
-
-	def receive( self ):
-
-		# print( self.rx, end = '' )
-		print( 'Receiving {}'.format( self.rxData ) )  # debug
-
-
-	def transmit( self ):
-
-		while self.on:
-
-			# Get user input
-			try:
-
-				user_input = input()
-
-			# Exit conditions
-			except EOFError:  # User pressed CTRL+C or CTRL+Z
-
-				self.exit()
-				break
-
-			# Append newline character (omitted by input())
-			user_input += '\n'
-
-			# Python input() can receive arbitrary length input from user
-			#  We want to send it out one character at a time '''
-			for c in user_input:
-
-				# Drive TX line
-				self.txData = c
-
-				print( 'Transmitting {}'.format( c ) )  # debug
-
-				# sleep( self.clockPeriod )
-
-		print( '{} has exited'.format( threading.current_thread().getName() ) )  # debug
-
-
-	def exit( self ):
-
-		self.on = False
-
-		print( 'See you later!' )
-
-
-
-# Tests ------------------------------------------
-
-from time import sleep, time
-
-term = Terminal()
-term.rxReady = 1
-# term.rxData = "greetings"
-
-clock = 0
-startTime = time()
-while time() - startTime < 1:
-	
-	clock ^= 1   # tick/tock
-
-	sleep( 0.5 )  # pulse width
-
-	term.clk = clock
-
-term.exit()
+		self.tkTextBox[ 'text' ] = self.displayBuffer

@@ -83,31 +83,31 @@ From 8080 Docs...
 			. POP DE   -> 11010001 -> 3 -> Pop register pair D & E off stack
 			. POP HL   -> 11100001 -> 3 -> Pop register pair H & L off stack
 			. POP PSW  -> 11110001 -> 3 -> Pop A and Flags off stack
-			. XHTL     -> 11100011 -> 5 -> Exchange top of stack with H & L
+			. XTHL     -> 11100011 -> 5 -> Exchange top of stack with H & L
 			. SPHL     -> 11111001 -> 1 -> H & L to stack pointer
 
 		- Jump
-			. JMP  -> 11000011 -> 3 -> Jump unconditional
-			. JNZ  -> 11000010 -> 3 -> Jump on not zero
-			. JZ   -> 11001010 -> 3 -> Jump on zero
-			. JNC  -> 11010010 -> 3 -> Jump on no carry
-			. JC   -> 11011010 -> 3 -> Jump on carry
-			. JPO  -> 11100010 -> 3 -> Jump on parity odd
-			. JPE  -> 11101010 -> 3 -> Jump on parity even
-			. JP   -> 11110010 -> 3 -> Jump on positive
-			. JM   -> 11111010 -> 3 -> Jump on minus
-			. PCHL -> 11101001 -> 1 -> H & L to program counter
+			. JMP addr -> 11000011 -> 3 -> Jump unconditional
+			. JNZ addr -> 11000010 -> 3 -> Jump on not zero
+			. JZ addr  -> 11001010 -> 3 -> Jump on zero
+			. JNC addr -> 11010010 -> 3 -> Jump on no carry
+			. JC addr  -> 11011010 -> 3 -> Jump on carry
+			. JPO addr -> 11100010 -> 3 -> Jump on parity odd
+			. JPE addr -> 11101010 -> 3 -> Jump on parity even
+			. JP addr  -> 11110010 -> 3 -> Jump on positive
+			. JM addr  -> 11111010 -> 3 -> Jump on minus
+			. PCHL     -> 11101001 -> 1 -> H & L to program counter
 
 		- Call
-			. CALL -> 11001101 -> 5   -> Call unconditional
-			. CNZ  -> 11000100 -> 3/5 -> Call on not zero
-			. CZ   -> 11001100 -> 3/5 -> Call on zero
-			. CNC  -> 11010100 -> 3/5 -> Call on no carry
-			. CC   -> 11011100 -> 3/5 -> Call on carry
-			. CPO  -> 11100100 -> 3/5 -> Call on parity odd
-			. CPE  -> 11101100 -> 3/5 -> Call on parity even
-			. CP   -> 11110100 -> 3/5 -> Call on positive
-			. CM   -> 11111100 -> 3/5 -> Call on minus
+			. CALL addr -> 11001101 -> 5   -> Call unconditional
+			. CNZ addr  -> 11000100 -> 3/5 -> Call on not zero
+			. CZ addr   -> 11001100 -> 3/5 -> Call on zero
+			. CNC addr  -> 11010100 -> 3/5 -> Call on no carry
+			. CC addr   -> 11011100 -> 3/5 -> Call on carry
+			. CPO addr  -> 11100100 -> 3/5 -> Call on parity odd
+			. CPE addr  -> 11101100 -> 3/5 -> Call on parity even
+			. CP addr   -> 11110100 -> 3/5 -> Call on positive
+			. CM addr   -> 11111100 -> 3/5 -> Call on minus
 
 		- Return
 			. RET -> 11001001 -> 3   -> Return unconditional
@@ -330,42 +330,30 @@ From 8080 Docs...
 '''
 
 from memory import *
+from time import sleep
 
 
 class CPU():
 
-	def __init__( self, dataMemory, programMemory ):
+	def __init__( self, memory, terminal ):
 
 		# Control signals (wip) ----------------------------------
 
 		self.halt = False  # temp for now
-		# self.hold = False  # facilitates DMA by peripherals
+		# self.hold = False  # input, facilitates DMA by peripherals
 
 		# IO
 		self.IO_RD = 0  # output
 		self.IO_WR = 0  # output
 
-		# interrupts, p.2-3 8085 User Man
-		# self.intr = 0  # maskable(can be en/disabled by EI or DI), something about RST
-		# self.rst55 = 0 # maskable through SIM
-		# self.rst65 = 0
-		# self.rst75 = 0
-		# self.trap = 0
-
-		# self.flagCC_databusIn        = None  # out
-		# self.flagCC_ready            = None  # in
-		# self.flagCC_wait             = None  # out
-		# self.flagCC_write            = None  # out
-		# self.flagCC_hold             = None  # in
-		# self.flipflop_holdAck         = None  # out
-		# self.flipflop_interruptEnable = None  # out
-		# self.flagCC_interruptRequest = None  # in
-		# self.flagCC_reset            = None  # in
-
 
 		# Peripherals --------------------------------------
-		self.dataMemory = dataMemory
-		self.programMemory = programMemory
+		self.memory = memory
+
+		self.ioDevices = [  # index simulates port number
+
+			terminal,
+		]
 
 
 		# Components ---------------------------------------
@@ -543,8 +531,8 @@ class CPU():
 			# POP PSW  -> 11110001 -> Pop A and Flags off ,stack
 			0b11110001 : ( self.POP_PSW, () ),
 
-			# XHTL -> 11100011 -> Exchange top of stack with H & L,
-			0b11100011 : ( self.XHTL, () ),
+			# XTHL -> 11100011 -> Exchange top of stack with H & L,
+			0b11100011 : ( self.XTHL, () ),
 
 			# SPHL -> 11111001 -> H & L to stack pointer
 			0b11111001 : ( self.SPHL, () ),
@@ -622,14 +610,14 @@ class CPU():
 			# Restart ---
 
 			# RST -> 11NNN111 -> 3 -> Restart
-			0b11000111 : ( self.RST, () ),
-			0b11001111 : ( self.RST, () ),
-			0b11010111 : ( self.RST, () ),
-			0b11011111 : ( self.RST, () ),
-			0b11100111 : ( self.RST, () ),
-			0b11101111 : ( self.RST, () ),
-			0b11110111 : ( self.RST, () ),
-			0b11111111 : ( self.RST, () ),
+			0b11000111 : ( self.RST, ( 0, ) ),
+			0b11001111 : ( self.RST, ( 1, ) ),
+			0b11010111 : ( self.RST, ( 2, ) ),
+			0b11011111 : ( self.RST, ( 3, ) ),
+			0b11100111 : ( self.RST, ( 4, ) ),
+			0b11101111 : ( self.RST, ( 5, ) ),
+			0b11110111 : ( self.RST, ( 6, ) ),
+			0b11111111 : ( self.RST, ( 7, ) ),
 
 			# Increment and decrement ---
 
@@ -840,9 +828,9 @@ class CPU():
 			# Input / Output ---
 
 			# IN port -> 11011011 -> Input
-			0b11011011 : ( self.IN_Port, () ),
+			0b11011011 : ( self.IN, () ),
 			# OUT port -> 11010011 -> Output
-			0b11010011 : ( self.OUT_Port, () ),
+			0b11010011 : ( self.OUT, () ),
 
 
 			# Control ---
@@ -856,6 +844,32 @@ class CPU():
 			# NOP -> 00000000 -> No operation
 			0b00000000 : ( self.NOP, () ),
 		}
+
+
+	# Serial simulation ----------------------------------------
+
+	def receive( self ):  # IN command
+
+		# Bypass need for UART and get data directly from IO device
+
+		ioDevice = self.ioDevices[ self.addressBus ]
+
+		data = ioDevice.transmit()
+
+		self.databus = data
+
+	def transmit( self, data ):
+
+		# Bypass need for UART and send data directly to IO device
+
+		ioDevice = self.ioDevices[ self.addressBus ]
+
+		ioDevice.receive( data )
+
+	def jumpToISR( self, loc ):
+
+		# Simulate interrupt handling
+		self.RST( loc )
 
 
 	# Helpers --------------------------------------------------
@@ -882,11 +896,11 @@ class CPU():
 
 	def read_M( self, address ):
 
-		return self.dataMemory.read( address )
+		return self.memory[ address ]
 
 	def write_M( self, address, value ):
 
-		self.dataMemory.write( address, value )
+		self.memory[ address ] = value
 
 
 	def toBin( self, x ):
@@ -1048,6 +1062,19 @@ class CPU():
 		# print( '{:<8}{}'.format( 'parity', c.flagALU_parity ) )
 
 
+	# Run ------------------------------------------------------
+
+	def run( self ):
+
+		while not self.halt:
+
+			self.fetchInstruction()
+
+			self.executeInstruction()
+
+		print( '8080 has halted' )
+
+
 	# Fetch Instruction ----------------------------------------
 
 	def fetchInstruction( self ):
@@ -1056,9 +1083,11 @@ class CPU():
 
 		self.register_PC.write( instructionAddress + 1 )  # increment
 
-		self.instruction = self.programMemory.read( instructionAddress )
+		self.instruction = self.memory[ instructionAddress ]
 
-		print( 'PC {:<3} Instr {}'.format( self.register_PC.read() - 1, self.instruction ) )
+		print( instructionAddress, self.instruction )
+
+		# print( 'PC {:<3} Instr {}'.format( self.register_PC.read() - 1, self.instruction ) )
 
 		return self.instruction
 
@@ -1069,6 +1098,7 @@ class CPU():
 
 		func, args = self.instructionLookup[ self.instruction ]
 
+		print( '>', func.__name__ )
 		# print( func, args )
 
 		func( *args )
@@ -1260,8 +1290,8 @@ class CPU():
 		self.write_A( self.read_M( SP + 1 ) )
 		self.register_SP.write( SP + 2 )
 
-	# XHTL -> 11100011 -> 5 -> Exchange top of stack with H & L
-	def XHTL( self ):
+	# XTHL -> 11100011 -> 5 -> Exchange top of stack with H & L
+	def XTHL( self ):
 
 		SP = self.register_SP.read()
 		temp_lo = self.read_M( SP     )
@@ -1473,7 +1503,7 @@ class CPU():
 		self.register_SP.write( SP - 2 )
 
 		# Goto address 8 * NNN
-		self.register_PC.write( NNN << 3 )
+		self.register_PC.write( 8 * NNN )
 
 
 	# Increment and decrement ---
@@ -1503,7 +1533,7 @@ class CPU():
 		address = self.register_HL.read()
 
 		z = self.add( self.read_M( address ), 1 )
-		self.write_M( z )
+		self.write_M( address, z )
 
 		self.flagALU_carry = savedCarry
 
@@ -1647,7 +1677,7 @@ class CPU():
 		z = self.register_HL.read() + R.read()
 
 		# according to docs, only carry flag is affected
-		if value > 0xffff:
+		if z > 0xffff:
 
 			self.flagALU_carry = 1
 
@@ -1655,7 +1685,7 @@ class CPU():
 
 			self.flagALU_carry = 0
 
-		s &= 0xffff  # discard overflow bits
+		z &= 0xffff  # discard overflow bits
 
 		self.register_HL.write( z )
 
@@ -1952,11 +1982,11 @@ class CPU():
 		byte2 = self.fetchInstruction()  # get port number. Used to select IO device
 		self.addressBus = byte2
 
-		self.IO_WR = 1                   # signal IO device to write to databus
+		# self.IO_WR = 1                   # signal IO device to write to databus
+		# self.write_A( self.dataBus )     # get data placed on databus by IO device
+		# self.IO_WR = 0                   # signal IO device to stop writing to databus
 
-		self.write_A( self.dataBus )     # get data placed on databus by IO device
-
-		self.IO_WR = 0                   # signal IO device to stop writing to databus
+		self.receive()  # simulate
 
 	# OUT port -> 11010011 -> 3 -> Output. Places contents of A onto data bus and the
 	#                                      selected port number onto the address bus
@@ -1965,11 +1995,15 @@ class CPU():
 		byte2 = self.fetchInstruction()  # get port number. Used to select IO device
 		self.addressBus = byte2
 
-		self.dataBus = self.read_A()     # place contents of A onto databus
+		# self.dataBus = self.read_A()     # place contents of A onto databus
+		# self.IO_RD = 1                   # signal IO device to read from databus
+		# sleep( 0.1 )                     # wait for IO device to read?? one clock pulse??
+		# self.IO_RD = 0                   # signal IO device to stop reading from databus
 
-		self.IO_RD = 1                   # signal IO device to read from databus
+		# simulate
+		data = self.read_A()
+		self.transmit( data )
 
-		self.IO_RD = 0                   # signal IO device to stop reading from databus
 
 
 	# Control ---

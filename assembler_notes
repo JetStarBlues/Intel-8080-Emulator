@@ -1,0 +1,109 @@
+Barebones
+	. add features as encountered
+	. no error checking
+
+Grammar
+
+	betterName         -> command | symbolDefinition | dataDefinition | memoryReservation | setLocationCounter
+
+	symbolDefinition   -> identifier ( EQU | SET ) expression
+
+	dataDefinition     -> ( identifier ':' )? ( DB | DW ) ( expression | asciiSequence )  # TODO comma separated
+
+	memoryReservation  -> ( identifier ':' )? DS expression
+
+	setLocationCounter -> ( identifier ':' )? ORG expression
+
+	command            -> ( identifier ':' )* commandName arguments*
+
+	arguments          -> expression ( ',' expression )*
+
+	expression         -> term ( op term )*
+
+	term               -> register | integerConstant | asciiSequence | identifier | currentLocation
+
+
+	comment         -> ';' whateverUntilLineEnd
+
+
+	integerConstant -> decConstant | hexConstant | binConstant
+
+	decConstant     -> (0..9)+D*
+	hexConstant     -> (0..9)+(A..F)*H
+	binConstant     -> (0..9)+B
+
+	asciiSequence   -> one or more characters wrapped in single/double quotes
+
+	identifier      -> sequence of letters, digits, and underscore not starting with a digit  ??
+
+	op              -> +, -, *, / (floor), MOD, SHR, SHL, NOT, AND, OR, XOR
+
+	register        -> B, C, D, E, H, L, A, M, SP, PSW
+
+	currentLocation -> '$'
+
+	eof             -> 'END'
+
+Notes:
+
+	ORG -> change value of location counter.
+	       If optional label, label is assigned current value of counter before relocation
+	EQU -> assigns value of expression to label
+	SET -> ditto EQU except can reassign
+	DB  -> stores specified data in consecutive memory locations starting at location counter
+	       one or more delimited by comma
+	       if optional label, label is assigned starting value (and thus refers to first element)
+	       0..255
+	DW  -> low byte stored at current location counter
+	       high byte store location counter + 1
+	       This process repeates for each word in list
+	       0..65535
+	DS  -> define block of storage.
+	       expression specifies number of bytes to be reserved.
+	       reserves memory by incrementing location counter
+
+Knowingly unsupported:
+
+	. operator precedence & parenthesis
+
+Assembly...
+
+	MOV A, H
+		. 01DDDSSS -> 01111100
+
+	JMP FFH
+		. 11000011  // jmp
+		. 11111111  // dest
+
+	XCHG
+		. 11101011
+
+	RST 5
+		. 11NNN111 -> 11101111
+
+
+	LXI H, LIST + 6  // seventh item
+
+	JMP $ + 6  // six bytes down
+
+	5+30*2
+	9 MOD 8
+
+	ORG 0100H
+
+	H0000 EQU 0000H
+
+	IMMED SET 5
+	      ADI IMMED
+	IMMED SET 99
+	      ADI IMMED
+
+	H0238: DS 9
+	       DB 'ASM'
+
+	DB 0,0,0,0,0,0,0,0,0,0,0
+
+	DB XP21-$-1
+
+	DW 'A', 'AB' // 4100 4241
+	DW 4H        // 0400
