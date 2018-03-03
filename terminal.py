@@ -17,7 +17,7 @@ class Terminal():
 
 		self.K_CTRL_C    = 0x03
 		self.K_BACKSPACE = 0x08
-		self.K_ENTER     = 0x0A
+		self.K_LF        = 0x0A
 
 		# teletype keys?
 		self.K_CR      = 0x0D  # used as end-of-(line,string,input) marker in TB
@@ -25,10 +25,14 @@ class Terminal():
 
 		self.debugMode = False
 
+		self.width = width
+		self.height = height
+		self.textColor = '#689497'
+		self.bgColor = '#fff4dc'
 		self.tkRoot = None
-		self.tkWidth = width
-		self.tkHeight = height
 		self.tkTextBox = None
+		self.tkCanvas = None
+		self.tkCanvasFrame = None
 
 		threading.Thread(
 
@@ -82,40 +86,44 @@ class Terminal():
 
 	def handleKeypress ( self, event ):
 
-		char = event.char
-		keyCode = ord( char )
+		if event.char:  # modifier keys like SHIFT are None?
 
-		if keyCode == self.K_CTRL_C:
+			char = event.char
+			keyCode = ord( char )
 
-			self.addKeyToBuffer( keyCode )  # send to TB
+			# print( char, keyCode )
 
-			return
+			if keyCode == self.K_CTRL_C:
 
-		elif keyCode == self.K_BACKSPACE:  
+				self.addKeyToBuffer( keyCode )  # send to TB
 
-			self.addKeyToBuffer( self.K_RUB_OUT )  # send to TB
+				return
 
-			if len( self.displayBuffer ) > 0:
+			elif keyCode == self.K_BACKSPACE:  
 
-				self.displayBuffer = self.displayBuffer[ : - 1 ]  # remove from display buffer
+				self.addKeyToBuffer( self.K_RUB_OUT )  # send to TB
 
-		elif keyCode == self.K_ENTER:
+				if len( self.displayBuffer ) > 0:
 
-			self.addKeyToBuffer( self.K_CR )  # send to TB
+					self.displayBuffer = self.displayBuffer[ : - 1 ]  # remove from display buffer
 
-			self.displayBuffer += char  # echo
+			elif keyCode == self.K_CR or keyCode == self.K_LF:
 
-		elif keyCode >= 32 and keyCode <= 126:
+				self.addKeyToBuffer( self.K_CR )  # send to TB
 
-			self.addKeyToBuffer( keyCode )  # send to TB
+				self.displayBuffer += '\n'  # echo
 
-			self.displayBuffer += char  # echo
+			elif keyCode >= 32 and keyCode <= 126:
 
-		else:
+				self.addKeyToBuffer( keyCode )  # send to TB
 
-			# print( 'Key not handled - {}'.format( keyCode ) )
+				self.displayBuffer += char  # echo
 
-			return
+			else:
+
+				# print( 'Key not handled - {}'.format( keyCode ) )
+
+				return
 
 		self.updateDisplay()
 
@@ -138,31 +146,63 @@ class Terminal():
 
 		self.updateDisplay()
 
+	def tk_onFrameConfigure( self, event ):
+
+		# resize canvas
+		self.tkCanvas.configure( scrollregion = self.tkCanvas.bbox( 'all' ) )
+
+	def tk_onCanvasConfigure( self, event ):
+
+		# resize frame
+		self.tkCanvas.itemconfigure( self.tkCanvasFrame, width = event.width )
+
 	def setupTkinter( self ):
 
 		self.tkRoot = tkinter.Tk()
-
-		self.tkRoot.config( width = self.tkWidth, height = self.tkHeight )
 		self.tkRoot.title( '8080 Sim' )
+		# self.tkRoot.configure( ... )
 
-		self.tkTextBox = tkinter.Label( self.tkRoot )
-		self.tkTextBox.place( relx = 0, rely = 0 )
-		self.tkTextBox.config(
-			wraplength = self.tkWidth - 5,
-			justify = tkinter.LEFT
+		self.tkCanvas = tkinter.Canvas( self.tkRoot )
+		self.tkCanvas.pack( side = tkinter.LEFT, expand = True, fill = 'both' )
+		self.tkCanvas.configure(
+
+			width = self.width,
+			height = self.height,
+			highlightthickness = 0,
+			bg = self.bgColor
 		)
 
-		textColor = "#689497"
-		bgColor = "#fff4dc"
-		self.tkTextBox.config( fg = textColor, bg = bgColor )
-		self.tkRoot.config( bg = bgColor )
+		scrollbar = tkinter.Scrollbar( self.tkRoot )
+		scrollbar.pack( side = tkinter.RIGHT, fill = 'y' )
+		scrollbar.configure(
 
+			orient = 'vertical',
+			command = self.tkCanvas.yview
+		)
+		self.tkCanvas.configure( yscrollcommand = scrollbar.set )
+
+		frame = tkinter.Frame( self.tkCanvas )
+		self.tkCanvasFrame = self.tkCanvas.create_window( ( 0, 0 ), window = frame, anchor = 'nw' )
+
+		self.tkTextBox = tkinter.Label( frame )
+		self.tkTextBox.pack( expand = True, fill = 'both' )
 		self.tkTextBox[ 'text' ] = self.displayBuffer
+		self.tkTextBox.config(
+
+			fg = self.textColor,
+			bg = self.bgColor,
+			anchor = 'nw',
+			justify = tkinter.LEFT,
+			wraplength = self.width - 5
+		)
+
+		frame.bind( '<Configure>', self.tk_onFrameConfigure )
+		self.tkCanvas.bind( '<Configure>', self.tk_onCanvasConfigure )
 
 		self.tkRoot.bind( '<KeyPress>', self.handleKeypress )
 
 		self.tkRoot.protocol( 'WM_DELETE_WINDOW', self.quitTkinter )
-
+		
 		self.tkRoot.mainloop()
 
 	def quitTkinter( self ):
@@ -175,3 +215,6 @@ class Terminal():
 	def updateDisplay( self ):
 
 		self.tkTextBox[ 'text' ] = self.displayBuffer
+
+
+# t = Terminal()

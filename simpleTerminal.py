@@ -1,23 +1,78 @@
+# Scrollbar, https://stackoverflow.com/a/3092341
+# Frame resize, https://stackoverflow.com/a/29322445
+
 import tkinter
 
-root = tkinter.Tk()
 width = 400
-height = 200
-# root.geometry('{}x{}'.format( width , height ) )
-root.config( width = width , height = height )
+height = 300
+textColor = '#689497'
+bgColor = '#fff4dc'
+
+root = tkinter.Tk()
 root.title( 'A Name' )
+root.configure(
+
+	# width = width,
+	# height = height,
+	# bg = bgColor
+	bg = '#007700'
+)
 
 
-prompt = tkinter.Label( root )
-# prompt.pack()
-prompt.place( relx = 0, rely = 0 )
-prompt.config( wraplength = width - 5, justify = tkinter.LEFT )
+canvas = tkinter.Canvas( root )
+canvas.pack( side = tkinter.LEFT, expand = True, fill = 'both' )
+canvas.configure(
+
+	width = width,
+	height = height,
+	highlightthickness = 0,
+	bg = bgColor
+	# bg = '#770000'
+)
 
 
-textColor = "#689497"
-bgColor = "#fff4dc"
-prompt.config( fg = textColor, bg = bgColor )
-root.config( bg = bgColor )
+scrollbar = tkinter.Scrollbar( root )
+scrollbar.pack( side = tkinter.RIGHT, fill = 'y' )
+scrollbar.configure(
+
+	orient = "vertical",
+	command = canvas.yview
+)
+
+canvas.configure( yscrollcommand = scrollbar.set )
+
+
+frame = tkinter.Frame( canvas )
+frame.configure( bg = '#000077' )
+
+canvasFrame = canvas.create_window( ( 0, 0 ), window = frame, anchor = 'nw' )
+
+
+def onFrameConfigure( event ):
+
+	# resize canvas
+	canvas.configure( scrollregion = canvas.bbox( 'all' ) )
+
+def onCanvasConfigure( event ):
+
+	# resize frame
+	canvas.itemconfigure( canvasFrame, width = event.width )
+
+frame.bind( '<Configure>', onFrameConfigure )
+canvas.bind( '<Configure>', onCanvasConfigure )
+
+
+prompt = tkinter.Label( frame )
+prompt.pack( expand = True, fill = 'both' )
+prompt.configure(
+
+	fg = textColor,
+	bg = bgColor,
+	anchor = 'nw',
+	justify = tkinter.LEFT
+	# wraplength = width - 5,
+)
+
 
 # prompt[ 'text' ] = '> Hello!'
 # prompt[ 'text' ] = 'You can also use elegant structures like tabs and marks to locate specific sections of the text, and apply changes to those areas. Moreover, you can embed windows and images in the text because this widget was designed to handle both plain and formatted text.'
@@ -35,6 +90,7 @@ codesOfInterest = [
 	13,  # newline
 	15,  # CTRL + O
 ]
+
 
 
 def getUserInput( event ):
