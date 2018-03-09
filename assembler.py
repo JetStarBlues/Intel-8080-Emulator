@@ -322,7 +322,7 @@ def getLabels( commands ):
 
 	for command in commands:
 
-		print( pc, command )
+		if debugMode: print( pc, command )
 
 		label = command[ 0 ]
 		cmd   = command[ 1 ]
@@ -454,14 +454,13 @@ def compileCommands( commands_indexed ):
 		cmd   = command[ 1 ][ 1 ]
 		args  = command[ 1 ][ 2 ]
 
-		parseCommand( cmd, args )
+		compileCommand( cmd, args )
 
-def parseCommand( command, args ):
+def compileCommand( command, args ):
 
 	global RAM
 
-	# if debugMode: print( pc, command, args )
-	print( pc, command, args )
+	if debugMode: print( pc, command, args )
 	
 	# cmd R,R
 	if command == 'MOV':
@@ -478,6 +477,9 @@ def parseCommand( command, args ):
 
 		R = args[ 0 ]
 		data = parseExpression( args[ 1 ] )
+
+		if isinstance( data, list ):  # is a character
+			data = data[ 0 ]
 
 		instruction = '00{}110'.format( registers[ R ] )
 
@@ -596,7 +598,7 @@ def parseCommand( command, args ):
 	#
 	else:
 
-		raise Exception( "Don't know how to parseCommand - {} {}".format( command, args ) )
+		raise Exception( "Don't know how to compileCommand - {} {}".format( command, args ) )
 
 def parseInt( s ):
 
@@ -770,11 +772,13 @@ def compile_ ( inputFile, RAM_ = None ):
 
 	commands_indexed = getLabels( commands )
 
-	pPrintDict( labels )
+	# pPrintDict( labels )
 
 	compileCommands( commands_indexed )
 
 	print( 'Assembly completed' )
+	print( 'Program is about {} bytes long'.format( pc ) )  # + 0 or 1 or 2
+	# print( RAM[ pc : pc + 5 ] )
 
 
 

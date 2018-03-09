@@ -79,11 +79,11 @@ From 8080 Docs...
 			. PUSH DE  -> 11010101 -> 3 -> Push register pair D & E on stack
 			. PUSH HL  -> 11100101 -> 3 -> Push register pair H & L on stack
 			. PUSH PSW -> 11110101 -> 3 -> Push A and Flags on stack
-			. POP BC   -> 11000001 -> 3 -> Pop register pair B & C off stack
-			. POP DE   -> 11010001 -> 3 -> Pop register pair D & E off stack
-			. POP HL   -> 11100001 -> 3 -> Pop register pair H & L off stack
-			. POP PSW  -> 11110001 -> 3 -> Pop A and Flags off stack
-			. XTHL     -> 11100011 -> 5 -> Exchange top of stack with H & L
+			. POP BC   -> 11000001 -> 3 -> Pop top of stack onto register pair B & C
+			. POP DE   -> 11010001 -> 3 -> Pop top of stack onto register pair D & E
+			. POP HL   -> 11100001 -> 3 -> Pop top of stack onto register pair H & L
+			. POP PSW  -> 11110001 -> 3 -> Pop top of stack onto A and Flags
+			. XTHL     -> 11100011 -> 5 -> Exchange H & L with contents of location specified by stack pointer
 			. SPHL     -> 11111001 -> 1 -> H & L to stack pointer
 
 		- Jump
@@ -335,7 +335,7 @@ from time import sleep
 
 class CPU():
 
-	def __init__( self, memory, terminal ):
+	def __init__( self, memory ):
 
 		# Control signals (wip) ----------------------------------
 
@@ -352,7 +352,7 @@ class CPU():
 
 		self.ioDevices = [  # index simulates port number
 
-			terminal,
+			# terminal,
 		]
 
 
@@ -521,17 +521,17 @@ class CPU():
 			# PUSH PSW -> 11110101 -> Push A and Flags on stack
 			0b11110101 : ( self.PUSH_PSW, () ),
 
-			# POP BC -> 11000001 -> Pop register pair B & C off stack
+			# POP BC -> 11000001 -> Pop top of stack onto register pair B & C
 			0b11000001 : ( self.POP_R, ( self.register_BC, ) ),
-			# POP DE -> 11010001 -> Pop register pair D & E off stack
+			# POP DE -> 11010001 -> Pop top of stack onto register pair D & E
 			0b11010001 : ( self.POP_R, ( self.register_DE, ) ),
-			# POP HL -> 11100001 -> Pop register pair H & L off stack
+			# POP HL -> 11100001 -> Pop top of stack onto register pair H & L
 			0b11100001 : ( self.POP_R, ( self.register_HL, ) ),
 
-			# POP PSW  -> 11110001 -> Pop A and Flags off ,stack
+			# POP PSW  -> 11110001 -> Pop top of stack onto A and Flags
 			0b11110001 : ( self.POP_PSW, () ),
 
-			# XTHL -> 11100011 -> Exchange top of stack with H & L,
+			# XTHL -> 11100011 -> Exchange H & L with contents of location specified by stack pointer
 			0b11100011 : ( self.XTHL, () ),
 
 			# SPHL -> 11111001 -> H & L to stack pointer
@@ -540,23 +540,23 @@ class CPU():
 
 			# Jump ---
 
-			# JMP -> 11000011 -> Jump unconditional
+			# JMP addr -> 11000011 -> Jump unconditional
 			0b11000011 : ( self.JMP, () ),
-			# JNZ -> 11000010 -> Jump on not zero
+			# JNZ addr -> 11000010 -> Jump on not zero
 			0b11000010 : ( self.JNZ, () ),
-			# JZ -> 11001010 -> Jump on zero
+			# JZ addr -> 11001010 -> Jump on zero
 			0b11001010 : ( self.JZ, () ),
-			# JNC -> 11010010 -> Jump on no carry
+			# JNC addr -> 11010010 -> Jump on no carry
 			0b11010010 : ( self.JNC, () ),
-			# JC -> 11011010 -> Jump on carry
+			# JC addr -> 11011010 -> Jump on carry
 			0b11011010 : ( self.JC, () ),
-			# JPO -> 11100010 -> Jump on parity odd
+			# JPO addr -> 11100010 -> Jump on parity odd
 			0b11100010 : ( self.JPO, () ),
-			# JPE -> 11101010 -> Jump on parity even
+			# JPE addr -> 11101010 -> Jump on parity even
 			0b11101010 : ( self.JPE, () ),
-			# JP -> 11110010 -> Jump on positive
+			# JP addr -> 11110010 -> Jump on positive
 			0b11110010 : ( self.JP, () ),
-			# JM -> 11111010 -> Jump on minus
+			# JM addr -> 11111010 -> Jump on minus
 			0b11111010 : ( self.JM, () ),
 
 			# PCHL -> 11101001 -> H & L to program counter
@@ -565,23 +565,23 @@ class CPU():
 
 			# Call ---
 
-			# CALL -> 11001101 -> Call unconditional
+			# CALL addr -> 11001101 -> Call unconditional
 			0b11001101 : ( self.CALL, () ),
-			# CNZ -> 11000100 -> Call on not zero
+			# CNZ addr -> 11000100 -> Call on not zero
 			0b11000100 : ( self.CNZ, () ),
-			# CZ -> 11001100 -> Call on zero
+			# CZ addr -> 11001100 -> Call on zero
 			0b11001100 : ( self.CZ, () ),
-			# CNC -> 11010100 -> Call on no carry
+			# CNC addr -> 11010100 -> Call on no carry
 			0b11010100 : ( self.CNC, () ),
-			# CC -> 11011100 -> Call on carry
+			# CC addr -> 11011100 -> Call on carry
 			0b11011100 : ( self.CC, () ),
-			# CPO -> 11100100 -> Call on parity odd
+			# CPO addr -> 11100100 -> Call on parity odd
 			0b11100100 : ( self.CPO, () ),
-			# CPE -> 11101100 -> Call on parity even
+			# CPE addr -> 11101100 -> Call on parity even
 			0b11101100 : ( self.CPE, () ),
-			# CP -> 11110100 -> Call on positive
+			# CP addr -> 11110100 -> Call on positive
 			0b11110100 : ( self.CP, () ),
-			# CM -> 11111100 -> Call on minus
+			# CM addr -> 11111100 -> Call on minus
 			0b11111100 : ( self.CM, () ),
 
 
@@ -609,7 +609,7 @@ class CPU():
 
 			# Restart ---
 
-			# RST -> 11NNN111 -> 3 -> Restart
+			# RST -> 11NNN111 -> Restart
 			0b11000111 : ( self.RST, ( 0, ) ),
 			0b11001111 : ( self.RST, ( 1, ) ),
 			0b11010111 : ( self.RST, ( 2, ) ),
@@ -856,7 +856,7 @@ class CPU():
 
 		data = ioDevice.transmit()
 
-		self.databus = data
+		return data
 
 	def transmit( self, data ):
 
@@ -1019,7 +1019,6 @@ class CPU():
 		# SZ0A0P1C  (Order as seen in pg.4-13 of 8080 User Manual)
 
 		b = self.flagALU_carry
-		# b |= 0b10
 		b |= self.flagALU_parity   << 2
 		b |= self.flagALU_auxCarry << 4
 		b |= self.flagALU_zero     << 6
@@ -1034,6 +1033,14 @@ class CPU():
 		self.flagALU_auxCarry = ( b >> 4 ) & 1
 		self.flagALU_zero     = ( b >> 6 ) & 1
 		self.flagALU_sign     = ( b >> 7 ) & 1
+
+	def updateALUFlags_Register( self ):
+
+		self.register_AF.writeLowerByte( self.genByteFromALUFlags() )
+
+	def updateALUFlags_Variables( self ):
+
+		self.setALUFlagsFromByte( self.register_AF.readLowerByte() )
 
 	def updateALUFlags_PZS( self, value ):
 
@@ -1056,6 +1063,8 @@ class CPU():
 
 			self.flagALU_sign = 1
 
+		self.updateALUFlags_Register()
+
 		# print( '{:<8}{}'.format( 'carry',  c.flagALU_carry ) )
 		# print( '{:<8}{}'.format( 'zero',   c.flagALU_zero ) )
 		# print( '{:<8}{}'.format( 'sign',   c.flagALU_sign ) )
@@ -1074,6 +1083,12 @@ class CPU():
 
 		print( '8080 has halted' )
 
+	def step( self ):
+
+		self.fetchInstruction()
+
+		self.executeInstruction()
+
 
 	# Fetch Instruction ----------------------------------------
 
@@ -1085,9 +1100,7 @@ class CPU():
 
 		self.instruction = self.memory[ instructionAddress ]
 
-		print( instructionAddress, self.instruction )
-
-		# print( 'PC {:<3} Instr {}'.format( self.register_PC.read() - 1, self.instruction ) )
+		# print( instructionAddress, self.instruction )
 
 		return self.instruction
 
@@ -1098,7 +1111,7 @@ class CPU():
 
 		func, args = self.instructionLookup[ self.instruction ]
 
-		print( '>', func.__name__ )
+		# print( '>', func.__name__ )
 		# print( func, args )
 
 		func( *args )
@@ -1268,13 +1281,13 @@ class CPU():
 	def PUSH_PSW( self ):
 
 		SP = self.register_SP.read()
-		self.write_M( SP - 1, self.read_A() )
-		self.write_M( SP - 2, self.genByteFromALUFlags() )
+		self.write_M( SP - 1, self.register_AF.readUpperByte() )
+		self.write_M( SP - 2, self.register_AF.readLowerByte() )
 		self.register_SP.write( SP - 2 )
 
-	# POP BC -> 11000001 -> 3 -> Pop register pair B & C off stack
-	# POP DE -> 11010001 -> 3 -> Pop register pair D & E off stack
-	# POP HL -> 11100001 -> 3 -> Pop register pair H & L off stack
+	# POP BC -> 11000001 -> 3 -> Pop top of stack onto register pair B & C
+	# POP DE -> 11010001 -> 3 -> Pop top of stack onto register pair D & E
+	# POP HL -> 11100001 -> 3 -> Pop top of stack onto register pair H & L
 	def POP_R( self, R ):
 
 		SP = self.register_SP.read()
@@ -1282,22 +1295,27 @@ class CPU():
 		R.writeUpperByte( self.read_M( SP + 1 ) )
 		self.register_SP.write( SP + 2 )
 
-	# POP PSW -> 11110001 -> 3 -> Pop A and Flags off stack
+	# POP PSW -> 11110001 -> 3 -> Pop top of stack onto A and Flags
 	def POP_PSW( self ):
 
 		SP = self.register_SP.read()
-		self.setALUFlagsFromByte( self.read_M( SP ) )
-		self.write_A( self.read_M( SP + 1 ) )
+		self.register_AF.writeLowerByte( self.read_M( SP     ) )
+		self.register_AF.writeUpperByte( self.read_M( SP + 1 ) )
 		self.register_SP.write( SP + 2 )
 
-	# XTHL -> 11100011 -> 5 -> Exchange top of stack with H & L
+		self.updateALUFlags_Variables()
+
+	# XTHL -> 11100011 -> 5 -> Exchange H & L with contents of location specified by stack pointer
 	def XTHL( self ):
 
 		SP = self.register_SP.read()
+
 		temp_lo = self.read_M( SP     )
 		temp_hi = self.read_M( SP + 1 )
-		self.register_SP.writeLowerByte( self.register_HL.readLowerByte() )
-		self.register_SP.writeUpperByte( self.register_HL.readUpperByte() )
+
+		self.write_M( SP,     self.register_HL.readLowerByte() )
+		self.write_M( SP + 1, self.register_HL.readUpperByte() )
+
 		self.register_HL.writeLowerByte( temp_lo )
 		self.register_HL.writeUpperByte( temp_hi )
 
@@ -1309,7 +1327,7 @@ class CPU():
 
 	# Jump ---
 
-	# JMP -> 11000011 -> 3 -> Jump unconditional
+	# JMP addr -> 11000011 -> 3 -> Jump unconditional
 	def JMP( self ):
 
 		byte2 = self.fetchInstruction()
@@ -1318,56 +1336,56 @@ class CPU():
 		address = self.toWord( byte2, byte3 )
 		self.register_PC.write( address )
 
-	# JNZ -> 11000010 -> 3 -> Jump on not zero
+	# JNZ addr -> 11000010 -> 3 -> Jump on not zero
 	def JNZ( self ):
 
 		if self.flagALU_zero == 0: self.JMP()
 
 		else: self.skip2Bytes()
 
-	# JZ -> 11001010 -> 3 -> Jump on zero
+	# JZ addr -> 11001010 -> 3 -> Jump on zero
 	def JZ( self ):
 
 		if self.flagALU_zero == 1: self.JMP()
 
 		else: self.skip2Bytes()
 
-	# JNC -> 11010010 -> 3 -> Jump on no carry
+	# JNC addr -> 11010010 -> 3 -> Jump on no carry
 	def JNC( self ):
 
 		if self.flagALU_carry == 0: self.JMP()
 
 		else: self.skip2Bytes()
 
-	# JC -> 11011010 -> 3 -> Jump on carry
+	# JC addr -> 11011010 -> 3 -> Jump on carry
 	def JC( self ):
 
 		if self.flagALU_carry == 1: self.JMP()
 
 		else: self.skip2Bytes()
 
-	# JPO -> 11100010 -> 3 -> Jump on parity odd
+	# JPO addr -> 11100010 -> 3 -> Jump on parity odd
 	def JPO( self ):
 
 		if self.flagALU_parity == 0: self.JMP()
 
 		else: self.skip2Bytes()
 
-	# JPE -> 11101010 -> 3 -> Jump on parity even
+	# JPE addr -> 11101010 -> 3 -> Jump on parity even
 	def JPE( self ):
 
 		if self.flagALU_parity == 1: self.JMP()
 
 		else: self.skip2Bytes()
 
-	# JP -> 11110010 -> 3 -> Jump on positive
+	# JP addr -> 11110010 -> 3 -> Jump on positive
 	def JP( self ):
 
 		if self.flagALU_sign == 0: self.JMP()
 
 		else: self.skip2Bytes()
 
-	# JM -> 11111010 -> 3 -> Jump on minus
+	# JM addr -> 11111010 -> 3 -> Jump on minus
 	def JM( self ):
 
 		if self.flagALU_sign == 1: self.JMP()
@@ -1382,7 +1400,7 @@ class CPU():
 
 	# Call ---
 
-	# CALL -> 11001101 -> 5 -> Call unconditional
+	# CALL addr -> 11001101 -> 5 -> Call unconditional
 	def CALL( self ):
 
 		byte2 = self.fetchInstruction()
@@ -1398,42 +1416,42 @@ class CPU():
 		address = self.toWord( byte2, byte3 )
 		self.register_PC.write( address )
 
-	# CNZ -> 11000100 -> 3/5 -> Call on not zero
+	# CNZ addr -> 11000100 -> 3/5 -> Call on not zero
 	def CNZ( self ):
 
 		if self.flagALU_zero == 0: self.CALL()
 
-	# CZ -> 11001100 -> 3/5 -> Call on zero
+	# CZ addr -> 11001100 -> 3/5 -> Call on zero
 	def CZ( self ):
 
 		if self.flagALU_zero == 1: self.CALL()
 
-	# CNC -> 11010100 -> 3/5 -> Call on no carry
+	# CNC addr -> 11010100 -> 3/5 -> Call on no carry
 	def CNC( self ):
 
 		if self.flagALU_carry == 0: self.CALL()
 
-	# CC -> 11011100 -> 3/5 -> Call on carry
+	# CC addr -> 11011100 -> 3/5 -> Call on carry
 	def CC( self ):
 
 		if self.flagALU_carry == 1: self.CALL()
 
-	# CPO -> 11100100 -> 3/5 -> Call on parity odd
+	# CPO addr -> 11100100 -> 3/5 -> Call on parity odd
 	def CPO( self ):
 
 		if self.flagALU_parity == 0: self.CALL()
 
-	# CPE -> 11101100 -> 3/5 -> Call on parity even
+	# CPE addr -> 11101100 -> 3/5 -> Call on parity even
 	def CPE( self ):
 
 		if self.flagALU_parity == 1: self.CALL()
 
-	# CP -> 11110100 -> 3/5 -> Call on positive
+	# CP addr -> 11110100 -> 3/5 -> Call on positive
 	def CP( self ):
 
 		if self.flagALU_sign == 0: self.CALL()
 
-	# CM -> 11111100 -> 3/5 -> Call on minus
+	# CM addr -> 11111100 -> 3/5 -> Call on minus
 	def CM( self ):
 
 		if self.flagALU_sign == 1: self.CALL()
@@ -1525,6 +1543,8 @@ class CPU():
 
 		self.flagALU_carry = savedCarry
 
+		self.updateALUFlags_Register()
+
 	# INR M -> 00110100 -> 3 -> Increment memory
 	def INR_M( self ):
 
@@ -1536,6 +1556,8 @@ class CPU():
 		self.write_M( address, z )
 
 		self.flagALU_carry = savedCarry
+
+		self.updateALUFlags_Register()
 
 	# INX BC -> 00000011 -> 1 -> Increment B & C register pair
 	# INX DE -> 00010011 -> 1 -> Increment D & E register pair
@@ -1564,6 +1586,8 @@ class CPU():
 
 		self.flagALU_carry = savedCarry
 
+		self.updateALUFlags_Register()
+
 	# DCR M -> 00110101 -> 3 -> Decrement memory
 	def DCR_M( self ):
 
@@ -1575,6 +1599,8 @@ class CPU():
 		self.write_M( z )
 
 		self.flagALU_carry = savedCarry
+
+		self.updateALUFlags_Register()
 
 	# DCX BC -> 00001011 -> 1 -> Decrement B & C register pair
 	# DCX DE -> 00011011 -> 1 -> Decrement D & E register pair
@@ -1689,6 +1715,7 @@ class CPU():
 
 		self.register_HL.write( z )
 
+		self.updateALUFlags_Register()
 
 	# Subtract ---
 
@@ -1913,6 +1940,8 @@ class CPU():
 
 		self.flagALU_carry = int( sout )
 
+		self.updateALUFlags_Register()
+
 	# RRC -> 00001111 -> 1 -> Rotate A right
 	def RRC( self ):
 
@@ -1925,6 +1954,8 @@ class CPU():
 		self.write_A( self.toInt( b ) )
 
 		self.flagALU_carry = int( sout )
+
+		self.updateALUFlags_Register()
 
 	# RAL -> 00010111 -> 1 -> Rotate A left through carry
 	def RAL( self ):
@@ -1939,6 +1970,8 @@ class CPU():
 
 		self.flagALU_carry = int( sout )
 
+		self.updateALUFlags_Register()
+
 	# RAR -> 00011111 -> 1 -> Rotate A right through carry
 	def RAR( self ):
 
@@ -1951,6 +1984,8 @@ class CPU():
 		self.write_A( self.toInt( b ) )
 
 		self.flagALU_carry = int( sout )
+
+		self.updateALUFlags_Register()
 
 
 	# Specials ---
@@ -1965,14 +2000,19 @@ class CPU():
 
 		self.flagALU_carry ^= 1  # flip
 
+		self.updateALUFlags_Register()
+
 	# STC -> 00110111 -> 1 -> Set carry
 	def STC( self ):
 
 		self.flagALU_carry = 1
 
-	# DAA -> 00100111 -> x -> Decimal adjust A
-	def DAA( self ): pass
+		self.updateALUFlags_Register()
 
+	# DAA -> 00100111 -> x -> Decimal adjust A
+	def DAA( self ):
+
+		raise Exception( 'DAA instruction not implemented' )
 
 	# Input / Output ---
 
@@ -1986,7 +2026,8 @@ class CPU():
 		# self.write_A( self.dataBus )     # get data placed on databus by IO device
 		# self.IO_WR = 0                   # signal IO device to stop writing to databus
 
-		self.receive()  # simulate
+		data = self.receive()  # simulate
+		self.write_A( data )
 
 	# OUT port -> 11010011 -> 3 -> Output. Places contents of A onto data bus and the
 	#                                      selected port number onto the address bus

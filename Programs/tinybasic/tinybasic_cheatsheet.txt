@@ -1,0 +1,105 @@
+Tiny Basic Language
+Re: "Dr. Wang's Palo Alto Tiny Basic" by Roger Rauskolb
+
+Integers
+	. -32767..32767
+
+Variables
+	. 26 denoted by letters A..Z
+
+Arrays
+	. single array
+	. @(index)
+	. one-indexed
+	. size equal to SIZE/2
+
+Functions
+	. ABS(x)  -> absolute value
+	. RND(x)  -> random number between 1 and X (inclusive)
+	. SIZE    -> number of bytes left unused by the program
+
+Arithmetic
+	. /   -> floor division
+	. *   -> multiply
+	. -   -> subtract
+	. +   -> add
+	. >   -> compare greater than
+	. <   -> compare less than
+	. =   -> compare equal to
+	. #   -> compare not equal to
+	. >=  -> compare greater than or equal to
+	. <=  -> compare less than or equal to
+
+	. compare operations result in 1 (true) or 0 (false)
+	. Can use parentheses to specify order of operation
+	. Default operator precedence:
+	  . first  -> * and /
+	  . second -> + and -
+	  . third  -> comparators
+
+Statements
+	. a number (1..32767) followed by one or more commands
+	. commands in same statement separated by a semi-colon (';')
+
+Program
+	. one or more statements
+	. when "RUN" command issued, statement with lowest number executed.
+	  Then the one with the next lowest number, etc.
+
+Commands
+	. REM          -> comment
+
+	. LET          -> assignment
+	                  ex. LET A=200
+	                      LET A=A/2
+	                      LET X=A-100, @(X+9)=A-1
+
+	. PRINT        -> print expression
+	                  ex. PRINT "Hello"
+	                      PRINT A*3
+	                  strings can be enclosed in either single or double quotes
+	                  supports formatting...
+	                    ex. PRINT A, B, #3, C, D, #10, F, G
+	                        will print A and B in 6 spaces, C and D in 3 spaces, F and G in 10
+
+	. INPUT        -> get user input
+	                  ex. INPUT A
+	                      will prompt user "A:" and store their input in variable A
+	                  ex. INPUT "what is your name?"A
+	                      will prompt user "what is your name?" and store their input in variable A
+
+	. IF           -> conditional execution
+	                  ex. IF A<B LET X=3; PRINT "NOPE"
+
+	. GOTO         -> jump to statement
+	                  ex. GOTO 50
+
+	. GOSUB        -> like "GOTO" except remembers current position
+	                  typically used in conjunction with "RETURN"
+
+	. RETURN       -> jump to saved position
+
+	. FOR          -> for loop
+	                  ex. FOR X=A+1 TO 3*B STEP C-1
+	                      ...
+	                      NEXT(X)
+
+	                  if expression following STEP omitted, defaults to +1
+
+	. STOP         -> stops execution of program
+
+	. LIST         -> print all statements in the program
+	                  ex. LIST     // print all
+	                  ex. LIST 12  // print statement 12
+
+	. NEW          -> delete all statements
+
+	. RUN          -> execute program
+
+
+Errors
+	. WHAT?  -> does not understand
+	            ex. typo in command name
+	. HOW?   -> understands but does not know how to execute
+	            ex. GOTO nonexistent statement
+	. SORRY  -> understands and can execute but not enough memory

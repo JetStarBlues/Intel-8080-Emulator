@@ -22,29 +22,8 @@ class Register ():
 
 	def writeUpperByte ( self, value ):
 
-		self.value = ( self.value & 0x00ff ) | value << 8
+		self.value = ( self.value & 0x00ff ) | ( value << 8 )
 
 	def writeLowerByte ( self, value ):
 
 		self.value = ( self.value & 0xff00 ) | value
-
-
-# class RAM ():
-
-# 	def __init__ ( self, size ):
-
-# 		self.registers = [ 0 ] * size
-
-# 	def read ( self, address ):
-
-# 		return self.registers[ address ]
-
-# 	def write ( self, address, value ):
-
-# 		self.registers[ address ] = value
-
-# 	def load ( self, data ):
-
-# 		for i in range( len( data ) ):
-
-# 			self.registers[ i ] = data[ i ]

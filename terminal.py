@@ -8,9 +8,7 @@ import threading
 
 class Terminal():
 
-	def __init__ ( self, width=400, height=400, CPU=None ):
-
-		self.CPU = CPU
+	def __init__ ( self, width=400, height=400 ):
 
 		self.keyBuffer = []
 		self.displayBuffer = ''
@@ -18,10 +16,8 @@ class Terminal():
 		self.K_CTRL_C    = 0x03
 		self.K_BACKSPACE = 0x08
 		self.K_LF        = 0x0A
-
-		# teletype keys?
-		self.K_CR      = 0x0D  # used as end-of-(line,string,input) marker in TB
-		self.K_RUB_OUT = 0x7F  # backspace
+		self.K_CR        = 0x0D  # used as end-of-(line,string,input) marker in TB
+		self.K_RUB_OUT   = 0x7F  # backspace
 
 		self.debugMode = False
 
@@ -34,12 +30,12 @@ class Terminal():
 		self.tkCanvas = None
 		self.tkCanvasFrame = None
 
-		threading.Thread(
+		# self.tkThread = threading.Thread(
 
-			target = self.setupTkinter,
-			name = 'tk_thread'
+		# 	target = self.setupTkinter,
+		# 	name = 'tk_thread'
 
-		).start()
+		# ).start()
 
 
 	# Communication -----------------------------------
@@ -95,54 +91,53 @@ class Terminal():
 
 			if keyCode == self.K_CTRL_C:
 
-				self.addKeyToBuffer( keyCode )  # send to TB
-
-				return
+				self.addKeyToBuffer( keyCode )
 
 			elif keyCode == self.K_BACKSPACE:  
 
-				self.addKeyToBuffer( self.K_RUB_OUT )  # send to TB
-
-				if len( self.displayBuffer ) > 0:
-
-					self.displayBuffer = self.displayBuffer[ : - 1 ]  # remove from display buffer
+				self.addKeyToBuffer( self.K_RUB_OUT )
 
 			elif keyCode == self.K_CR or keyCode == self.K_LF:
 
-				self.addKeyToBuffer( self.K_CR )  # send to TB
-
-				self.displayBuffer += '\n'  # echo
+				self.addKeyToBuffer( self.K_CR )
 
 			elif keyCode >= 32 and keyCode <= 126:
 
-				self.addKeyToBuffer( keyCode )  # send to TB
-
-				self.displayBuffer += char  # echo
+				self.addKeyToBuffer( keyCode )
 
 			else:
 
 				# print( 'Key not handled - {}'.format( keyCode ) )
-
-				return
-
-		self.updateDisplay()
+				pass
 
 
 	# Display -----------------------------------------
 
-	def displayCharacter ( self, data ):
+	def displayCharacter ( self, keyCode ):
 
 		if self.debugMode:
 
-			print( 'tkRaw ->', data )
+			print( 'tkRaw ->', keyCode )
 
-		if data >= 32 and data <= 126:
+		if keyCode >= 32 and keyCode <= 126:
 
-			self.displayBuffer += chr( data )
+			self.displayBuffer += chr( keyCode )
 
-		elif data == self.K_CR:
+		elif keyCode == self.K_CR:
+
+			# self.displayBuffer += 'wtf'
+			pass
+
+		elif keyCode == self.K_LF:
 
 			self.displayBuffer += '\n'
+
+		elif keyCode == self.K_BACKSPACE:  
+
+			if len( self.displayBuffer ) > 0:
+
+				self.displayBuffer = self.displayBuffer[ : - 1 ]  # remove from display buffer
+
 
 		self.updateDisplay()
 
@@ -160,7 +155,6 @@ class Terminal():
 
 		self.tkRoot = tkinter.Tk()
 		self.tkRoot.title( '8080 Sim' )
-		# self.tkRoot.configure( ... )
 
 		self.tkCanvas = tkinter.Canvas( self.tkRoot )
 		self.tkCanvas.pack( side = tkinter.LEFT, expand = True, fill = 'both' )
@@ -209,7 +203,6 @@ class Terminal():
 
 		self.tkRoot.quit()
 
-		# print( 'See you later!' )
 		print( 'Tkinter has exited' )
 
 	def updateDisplay( self ):
