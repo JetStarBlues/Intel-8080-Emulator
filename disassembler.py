@@ -466,13 +466,13 @@ instructionLookup = {
 instructionsWithData = {
 
 	# MVI R,data -> 00DDD110 -> Move immediate to register
-	'MOV B,data' : 1,
-	'MOV C,data' : 1,
-	'MOV D,data' : 1,
-	'MOV E,data' : 1,
-	'MOV H,data' : 1,
-	'MOV L,data' : 1,
-	'MOV A,data' : 1,
+	'MVI B,data' : 1,
+	'MVI C,data' : 1,
+	'MVI D,data' : 1,
+	'MVI E,data' : 1,
+	'MVI H,data' : 1,
+	'MVI L,data' : 1,
+	'MVI A,data' : 1,
 
 	'MVI M,data' : 1,
 

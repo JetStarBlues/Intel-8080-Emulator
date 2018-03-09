@@ -7,6 +7,7 @@ from disassembler import instructionLookup, instructionsWithData
 
 from time import sleep
 import sys
+from shutil import copyfile
 
 class Computer ():
 
@@ -67,8 +68,12 @@ class Computer ():
 
 		self.prevInstruction = None
 		self.prevPC = None
+		self.nextInstruction = None
+		self.nextPC = None
+		self.nSteps = 0
+		self.curStep = 0
 
-		self.dumpStatus()
+		self.dumpStatusToFiles()
 
 		while True:
 
@@ -76,26 +81,82 @@ class Computer ():
 
 			if uinput == 'n':
 
+				if self.curStep == self.nSteps:
+
+					self.nSteps += 1
+
+				self.curStep += 1
+
 				self.CPU.step()
 
-				self.dumpStatus()
+				self.dumpStatusToFiles()
+
+				print( self.curStep )
+
+			elif uinput == 'p':
+
+				self.curStep -= 1
+
+				if self.curStep < 0: self.curStep = 0
+
+				self.dumpStatusToFiles()
+
+				print( self.curStep )
 
 			elif uinput == 'quit':
 
 				break
 
+			# print( self.curStep, self.nSteps )
+
+
+	def dumpStatusToFiles ( self ):
+
+		if self.curStep == self.nSteps:
+
+			# print( 'creating new file' )
+
+			#
+			self.nextPC = self.CPU.register_PC.read()
+			self.nextInstruction = instructionLookup[ self.CPU.read_M( self.nextPC ) ]
+
+			# display
+			filePath = self.dumpFilePath + 'tmp'
+			self.dumpStatusToFile( filePath )
+
+			# store
+			filePath = self.dumpFilePath + str( self.curStep )
+			self.dumpStatusToFile( filePath )
+
+			#
+			self.prevPC = self.nextPC
+			self.prevInstruction = self.nextInstruction
+
+		else:
+
+			# print( 'reading old file' )
+
+			# display stored
+			src = self.dumpFilePath + str( self.curStep )
+			dst = self.dumpFilePath + 'tmp'
+			copyfile( src, dst )
+
+
+	def dumpStatusToFile ( self, filePath ):
+
+		sys.stdout = open( filePath, 'w' )  # redirect stdout
+
+		self.dumpStatus()
+
+		sys.stdout = sys.__stdout__  # restore stdout
+
 
 	def dumpStatus ( self ):
 
-		if self.dumpFilePath:  # redirect stdout
-
-			sys.stdout = open( self.dumpFilePath, 'w' )
-
-
-		print( '\nMemory...' )
+		print( '\nMemory ---' )
 		self.dumpMemory()
 
-		print( '\nRegisters...' )
+		print( '\nRegisters ---' )
 		print( 'A  :', self.CPU.register_AF.readUpperByte() )
 		print( 'B  :', self.CPU.register_BC.readUpperByte() )
 		print( 'C  :', self.CPU.register_BC.readLowerByte() )
@@ -108,7 +169,7 @@ class Computer ():
 		print( 'HL :', self.CPU.register_HL.read() )
 		print( 'SP :', self.CPU.register_SP.read() )
 
-		print( '\nFlags...' )
+		print( '\nFlags ---' )
 		f = self.CPU.register_AF.readLowerByte()
 		f = bin( f )[ 2 : ].zfill( 8 )
 		f = f[ : : - 1 ]
@@ -117,7 +178,7 @@ class Computer ():
 		print( 'zero   :', self.CPU.flagALU_zero  , f[ 6 ] )
 		print( 'sign   :', self.CPU.flagALU_sign  , f[ 7 ] )
 
-		print( '\nInstruction...' )
+		print( '\nInstruction ---' )
 		if self.prevInstruction in instructionsWithData:
 			print( 'instruction      :', self.prevInstruction )
 			nBytes = instructionsWithData[ self.prevInstruction ]
@@ -125,17 +186,13 @@ class Computer ():
 				print( 'data             :', self.CPU.read_M( self.prevPC + 1 + i ) )
 		else:
 			print( 'instruction      :', instructionLookup[ self.CPU.instruction ] )  # disassemble
-		nextPC = self.CPU.register_PC.read()
-		nextInstr = instructionLookup[ self.CPU.read_M( nextPC ) ]
-		print( 'PC_next          :', nextPC )
-		print( 'instruction_next :', nextInstr )
+		# self.nextPC = self.CPU.register_PC.read()
+		# self.nextInstruction = instructionLookup[ self.CPU.read_M( self.nextPC ) ]
+		print( 'PC_next          :', self.nextPC )
+		print( 'instruction_next :', self.nextInstruction )
 
-		self.prevPC = nextPC
-		self.prevInstruction = nextInstr
-
-		if self.dumpFilePath:  # restore stdout
-
-			sys.stdout = sys.__stdout__
+		# self.prevPC = self.nextPC
+		# self.prevInstruction = self.nextInstruction
 
 
 	def dumpMemory ( self, start=None, end=None ):

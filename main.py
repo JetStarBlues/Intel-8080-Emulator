@@ -15,7 +15,7 @@ programPath = 'Programs/tinybasic-2.0-mod.asm'
 c.loadProgram( programPath )
 
 
-dumpFilePath = '../../../tmp'
+dumpFilePath = '../../../tmp/'
 c.dumpFilePath = dumpFilePath
 
 # c.dumpMemory()
