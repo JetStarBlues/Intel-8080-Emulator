@@ -13,6 +13,7 @@
 # 
 # ========================================================================================
 
+
 '''
    Inspired by,
     - Game Boy Emulation
@@ -27,6 +28,8 @@
        ftp://bitsavers.informatik.uni-stuttgart.de/pdf/intel/MCS80/98-153B_Intel_8080_Microcomputer_Systems_Users_Manual_197509.pdf
     - 8080 Assembly Language Manual
        http://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf
+	- 8080/8085 Assembly Language Manual
+	   https://www.tramm.li/i8080/Intel%208080-8085%20Assembly%20Language%20Programming%201977%20Intel.pdf
 
    Of interest,
     http://www.righto.com/search/label/8085

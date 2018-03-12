@@ -1,7 +1,21 @@
-'''
-	input  -> keyboard
-	output -> display
-'''
+# ========================================================================================
+# 
+#  Description:
+# 
+#     Simple Terminal Emulator
+#
+#     Interface:
+#       Input  -> keyboard
+#       Output -> screen
+# 
+#  Attribution:
+# 
+#     Code by www.jk-quantized.com
+# 
+#  Redistribution and use of this code in source and binary forms must retain
+#  the above attribution notice and this condition.
+# 
+# ========================================================================================
 
 import tkinter
 import threading

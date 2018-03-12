@@ -1,3 +1,21 @@
+# ========================================================================================
+# 
+#  Description:
+# 
+#     Barebones disassembler for the Intel 8080 Emulator
+#
+#     Do not use it if you don't have to!
+# 
+#  Attribution:
+# 
+#     Code by www.jk-quantized.com
+# 
+#  Redistribution and use of this code in source and binary forms must retain
+#  the above attribution notice and this condition.
+# 
+# ========================================================================================
+
+
 instructionLookup = {
 
 	None : None,

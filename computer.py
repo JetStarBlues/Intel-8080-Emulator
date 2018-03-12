@@ -1,3 +1,21 @@
+# ========================================================================================
+# 
+#  Description:
+# 
+#     Computer for the Intel 8080 Emulator
+#     
+#     Supports debugging (step and breakpoint)
+# 
+#  Attribution:
+# 
+#     Code by www.jk-quantized.com
+# 
+#  Redistribution and use of this code in source and binary forms must retain
+#  the above attribution notice and this condition.
+# 
+# ========================================================================================
+
+
 from cpu_8080 import *
 from memory import *
 from terminal import *
