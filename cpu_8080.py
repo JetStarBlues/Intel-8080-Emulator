@@ -949,19 +949,10 @@ class CPU():
 
 	def sub( self, a, b, c = 0 ):
 
-		# See pg. 25 of 8080 Programming Manual
-
 		z = a + self.negate( b + c )
 
 		# Update carry flag
-		# if z > self.negativeOne:
-
-		# 	self.flagALU_carry = 0
-
-		# else:
-
-		# 	self.flagALU_carry = 1
-
+		#  https://retrocomputing.stackexchange.com/a/5956/
 		if ( b + c ) > a:
 
 			self.flagALU_carry = 1
@@ -969,9 +960,6 @@ class CPU():
 		else:
 
 			self.flagALU_carry = 0
-
-		print( 'gd! {} - ( {} + {} ) = {} and c {}'.format( a, b, c, z, self.flagALU_carry ) )
-		print( 'fneg {}'.format( self.negate( b + c ) ) )
 
 		z &= self.negativeOne  # discard overflow bits
 
@@ -1432,40 +1420,56 @@ class CPU():
 
 		if self.flagALU_zero == 0: self.CALL()
 
+		else: self.skip2Bytes()
+
 	# CZ addr -> 11001100 -> 3/5 -> Call on zero
 	def CZ( self ):
 
 		if self.flagALU_zero == 1: self.CALL()
+
+		else: self.skip2Bytes()
 
 	# CNC addr -> 11010100 -> 3/5 -> Call on no carry
 	def CNC( self ):
 
 		if self.flagALU_carry == 0: self.CALL()
 
+		else: self.skip2Bytes()
+
 	# CC addr -> 11011100 -> 3/5 -> Call on carry
 	def CC( self ):
 
 		if self.flagALU_carry == 1: self.CALL()
+
+		else: self.skip2Bytes()
 
 	# CPO addr -> 11100100 -> 3/5 -> Call on parity odd
 	def CPO( self ):
 
 		if self.flagALU_parity == 0: self.CALL()
 
+		else: self.skip2Bytes()
+
 	# CPE addr -> 11101100 -> 3/5 -> Call on parity even
 	def CPE( self ):
 
 		if self.flagALU_parity == 1: self.CALL()
+
+		else: self.skip2Bytes()
 
 	# CP addr -> 11110100 -> 3/5 -> Call on positive
 	def CP( self ):
 
 		if self.flagALU_sign == 0: self.CALL()
 
+		else: self.skip2Bytes()
+
 	# CM addr -> 11111100 -> 3/5 -> Call on minus
 	def CM( self ):
 
 		if self.flagALU_sign == 1: self.CALL()
+
+		else: self.skip2Bytes()
 
 
 	# Return ---
@@ -1607,7 +1611,7 @@ class CPU():
 		address = self.register_HL.read()
 
 		z = self.sub( self.read_M( address ), 1 )
-		self.write_M( z )
+		self.write_M( address, z )
 
 		self.flagALU_carry = savedCarry
 

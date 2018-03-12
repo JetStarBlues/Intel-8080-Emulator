@@ -71,6 +71,27 @@ class Terminal():
 		self.CPU.jumpToISR( isrLoc )
 
 
+	# Helper ------------------------------------------
+
+	def tooLazyToType ( self, filepath ):
+
+		with open( filepath, 'r' ) as file:
+
+			for line in file:
+
+				for char in line:
+
+					keyCode = ord( char )
+
+					if keyCode == self.K_LF:
+
+						keyCode = self.K_CR  # tiny basic expects CR as delimiter
+
+					# print( char, keyCode )
+
+					self.addKeyToBuffer( keyCode )
+
+
 	# Keypress ----------------------------------------
 
 	def addKeyToBuffer ( self, key ):

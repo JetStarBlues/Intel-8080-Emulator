@@ -131,6 +131,15 @@ class Computer ():
 
 					print( self.curStep )
 
+				elif uinput == '?' or uinput == 'help':
+
+					print( 'To navigate, type:' )
+					print( '  n    -> next'     )
+					print( '  p    -> previous' )
+					print( '  quit -> quit'     )
+					print( '  help -> help'     )
+					print( 'The current dump can be found in dumpFilePath/tmp' )
+
 				elif uinput == 'quit':
 
 					break

@@ -1,4 +1,0 @@
-1 LET N = 5
-2 PRINT "Hello"
-3 LET N = N - 1
-4 IF N > 0 THEN GOTO 1010

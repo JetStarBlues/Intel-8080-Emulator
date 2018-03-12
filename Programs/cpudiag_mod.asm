@@ -1,5 +1,8 @@
 ; Retrieved from
 ;  https://brainwagon.org/2011/09/08/more-on-my-8080-emulator/
+;  via
+;   http://www.emulator101.com/full-8080-emulation.html
+;
 ; JK, modified output functions to work with my emulator
 
 ;***********************************************************************
@@ -655,8 +658,8 @@ MOVI:	MVI		A,077H
 		CPI		055H
 		CNZ		CPUER		;TEST "CMA"
 		ORA		A			;RE-SET AUXILIARY CARRY
-		DAA
-		CPI		055H
+		; DAA
+		; CPI		055H
 		; CNZ		CPUER		;TEST "DAA"
 		; MVI		A,088H
 		; ADD		A
@@ -674,9 +677,9 @@ MOVI:	MVI		A,077H
 		; DAA
 		; CNC		CPUER		;TEST "DAA"
 		; CNZ		CPUER		;TEST "DAA"
-		; STC
-		; MVI		A,042H
-		; RLC
+		STC
+		MVI		A,042H
+		RLC
 		CC		CPUER		;TEST "RLC" FOR RE-SET CARRY
 		RLC
 		CNC		CPUER		;TEST "RLC" FOR SET CARRY
@@ -778,7 +781,7 @@ MOVI:	MVI		A,077H
 ;
 ;
 CPUER:
-		HLT
+		HLT 			; JK, stopping it here to preserve registers
 		LXI		H,NGCPU	;OUTPUT "CPU HAS FAILED    ERROR EXIT=" TO CONSOLE
 		CALL	MSG
 		XTHL

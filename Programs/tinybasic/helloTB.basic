@@ -1,0 +1,4 @@
+1 LET N = 5
+2 PRINT "Bonjour!"
+3 LET N = N - 1
+4 IF N > 0 GOTO 2
