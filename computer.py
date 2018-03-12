@@ -21,7 +21,20 @@ class Computer ():
 
 		self.CPU.ioDevices.append( self.terminal )
 
+
+		# Debug helpers ---
 		self.dumpFilePath = None
+		self.breakpoint = None
+		self.breakpointReached = False
+
+		self.prevInstruction = None
+		self.prevPC = None
+		self.nextInstruction = None
+		self.nextPC = None
+		self.curStep = 0
+		self.nStepsSaved = - 1
+
+		self.stackBase = None
 
 
 	def loadProgram ( self, programPath ):
@@ -66,53 +79,66 @@ class Computer ():
 
 	def run_debugMode ( self ):
 
-		self.prevInstruction = None
-		self.prevPC = None
-		self.nextInstruction = None
-		self.nextPC = None
-		self.nSteps = 0
-		self.curStep = 0
-
 		self.dumpStatusToFiles()
 
 		while True:
 
-			uinput = input( '> ' )
+			if ( self.breakpoint and
+				 ( not self.breakpointReached ) and
+				 ( self.nextPC < self.breakpoint ) ):
 
-			if uinput == 'n':
-
-				if self.curStep == self.nSteps:
-
-					self.nSteps += 1
+				# Auto step ---
 
 				self.curStep += 1
 
-				self.CPU.step()
+				if self.curStep > self.nStepsSaved:
+
+					self.CPU.step()
 
 				self.dumpStatusToFiles()
 
 				print( self.curStep )
 
-			elif uinput == 'p':
+				if ( self.nextPC == self.breakpoint ) or self.CPU.halt:
 
-				self.curStep -= 1
+					self.breakpointReached = True
 
-				if self.curStep < 0: self.curStep = 0
+			else:
 
-				self.dumpStatusToFiles()
+				# Manual step ---
 
-				print( self.curStep )
+				uinput = input( '> ' )
 
-			elif uinput == 'quit':
+				if uinput == 'n':
 
-				break
+					self.curStep += 1
 
-			# print( self.curStep, self.nSteps )
+					if self.curStep > self.nStepsSaved:
+
+						self.CPU.step()
+
+					self.dumpStatusToFiles()
+
+					print( self.curStep )
+
+				elif uinput == 'p':
+
+					self.curStep -= 1
+
+					if self.curStep < 0: self.curStep = 0
+
+					self.dumpStatusToFiles()
+
+					print( self.curStep )
+
+				elif uinput == 'quit':
+
+					break
 
 
 	def dumpStatusToFiles ( self ):
 
-		if self.curStep == self.nSteps:
+		if self.curStep > self.nStepsSaved:
 
 			# print( 'creating new file' )
 
@@ -127,6 +153,7 @@ class Computer ():
 			# store
 			filePath = self.dumpFilePath + str( self.curStep )
 			self.dumpStatusToFile( filePath )
+			self.nStepsSaved += 1
 
 			#
 			self.prevPC = self.nextPC
@@ -155,6 +182,12 @@ class Computer ():
 
 		print( '\nMemory ---' )
 		self.dumpMemory()
+
+		if self.stackBase:
+			print( '\nStack ---' )
+			self.dumpMemory( self.CPU.register_SP.read(), self.stackBase )
+		elif self.CPU.register_SP.read() > 0:
+			self.stackBase = self.CPU.register_SP.read()
 
 		print( '\nRegisters ---' )
 		print( 'A  :', self.CPU.register_AF.readUpperByte() )
@@ -212,11 +245,15 @@ class Computer ():
 			b = bin( r )[ 2 : ].zfill( 8 )
 			# b = '{:08b}'.format( r )
 
-			if r != 0:
+			if r < 0:
+
+				raise Exception( 'wtf', i, r )  # should never happen
+
+			elif r > 0:
 
 				c = None
-				if r > 127: c = chr( r )
+				if r < 128: c = chr( r )
 
-				# print( '{:5x}  {:08b}  {:5}  {}'.format( i, r, r, c ) )
-				print( '{:5x}  {:08b}  {:5}  {}'.format( i, r, r, c ).encode( 'utf-8' ) )
+				# print( '{:4x}  {:5}  |  {:08b}  {:5}  {}'.format( i, i, r, r, c ) )
+				print( '{:4x}  {:5}  |  {:08b}  {:5}  {}'.format( i, i, r, r, str( c ).encode( 'utf-8' ) ) )
 

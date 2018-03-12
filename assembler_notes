@@ -60,7 +60,8 @@ Notes:
 	       0..65535
 	DS  -> define block of storage.
 	       expression specifies number of bytes to be reserved.
-	       reserves memory by incrementing location counter
+	       reserves memory by incrementing location counter.
+	       Any symbol that appears in expression must be defined before
 
 Knowingly unsupported:
 

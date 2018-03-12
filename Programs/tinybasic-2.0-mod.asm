@@ -23,7 +23,7 @@
 ; TWO OTHER SUBROUTINES (CRLF AND TSTNUM) ARE ALSO IN THIS
 ; SECTION.  THEY CAN BE REACHED ONLY BY 3-BYTE CALLS.
 ; 
-; DWA     MACRO WHERE               ; JK, lazy, assembler doesn't yet support macros
+; DWA     MACRO WHERE               ; JK, simple assembler doesn't yet support macros
 ;         DB   (WHERE >> 8) + 128
 ;         DB   WHERE & 0FFH
 ;         ENDM
@@ -213,14 +213,9 @@ ST3:    MVI  A,3EH                      ;PROMPT '>' AND
         CALL TSTNUM                     ;TEST IF IT IS A NUMBER
         RST  5
         MOV  A,H                        ;HL=VALUE OF THE # OR
-;MOV A,C
-;ADI 48
-;OUT 0
         ORA  L                          ;0 IF NO # WAS FOUND
         POP  B                          ;BC->END OF LINE
         JZ   DIRECT
-;MVI A,'$'
-;OUT 0
         DCX  D                          ;BACKUP DE AND SAVE
         MOV  A,H                        ;VALUE OF LINE # THERE
         STAX D
@@ -364,9 +359,6 @@ GOTO:   RST  3                          ;*** GOTO EXPR ***
 LIST:   CALL TSTNUM                     ;TEST IF THERE IS A #
         CALL ENDCHK                     ;IF NO # WE GET A 0
         CALL FNDLN                      ;FIND THIS OR NEXT LINE
-MVI A,'$'
-OUT 0
-HLT
 LS1:    JC   RSTART                     ;C:PASSED TXTUNF
         CALL PRTLN                      ;PRINT THE LINE
         CALL CHKIO                      ;STOP IF HIT CONTROL-C
@@ -1146,6 +1138,7 @@ FNDLN:  MOV  A,H                        ;*** FNDLN ***
         ORA  A                          ;CHECK SIGN OF HL
         JM   QHOW                       ;IT CANNOT BE -
         LXI  D,TXTBGN                   ;INIT TEXT POINTER
+; MVI L,1  ; JK hmm...
 ;
 FNDLP:                                  ;*** FDLNP ***
 FL1:    PUSH H                          ;SAVE LINE #

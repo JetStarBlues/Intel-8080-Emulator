@@ -1,4 +1,5 @@
 import re
+from operator import itemgetter
 
 debugMode = False
 
@@ -13,8 +14,8 @@ ranSecondPass = False
 completedPasses = False
 nPasses = 0
 
-ops = [ '+', '-', '>>', '&' ]
-opsRe = '(\+|\-|>>|&)'
+ops = [ '+', '-', '/', '>>', '&' ]
+opsRe = '(\+|\-|/|>>|&)'
 
 registers = {
 
@@ -183,13 +184,21 @@ twoImmediate = [
 	'CALL', 'CNZ', 'CZ', 'CNC', 'CC', 'CPO', 'CPE', 'CP', 'CM'
 ]
 
-def pPrintDict( d ):
+def pPrintDict( d, sortByValue=False ):
 
-	for k,v in sorted( d.items() ):
+	if sortByValue:
 
-		print( k, v )
+		for k,v in sorted( d.items(), key=itemgetter( 1 ) ):
 
-def getNibbles( x ):
+			print( k, v )
+
+	else:
+
+		for k,v in sorted( d.items() ):
+
+			print( k, v )
+
+def getBytes( x ):
 
 	lo = x & 0xff
 	hi = ( x >> 8 ) & 0xff
@@ -316,6 +325,8 @@ def getLabels( commands ):
 
 	commands_indexed = []
 
+	# labels = {}
+	# variables = {}
 	pc = 0
 
 	nPasses += 1
@@ -352,60 +363,70 @@ def getLabels( commands ):
 
 		if cmd == 'DB' or cmd =='DW' or cmd == 'DS':
 
-			x = parseArguments( args[ 0 ] )
+			x, nArgs = parseArguments( args[ 0 ] )
 
-			if x[ 0 ] != None:
+			# if x[ 0 ] == None:
 
-				if cmd == 'DB':
+			# 	raise Exception( 'derp - {}, {}'.format( command, x ) )
 
-					for e in x:
+			if cmd == 'DB':
 
-						if isinstance( e, list ):  # ex character array
+				for e in x:
 
-							for c in e:
+					if e == None:
 
-								RAM[ pc ] = c
+						pc += 1  # take up space
 
-								pc += 1
+					elif isinstance( e, list ):  # ex character array
 
-						else:						
+						for c in e:
 
-							RAM[ pc ] = e
+							RAM[ pc ] = c
 
 							pc += 1
 
-				elif cmd == 'DW':
+					else:
 
-					for e in x:
+						RAM[ pc ] = e
 
-						if isinstance( e, list ):  # ex character array
+						pc += 1
 
-							# reversed??? 'A' stored as 4100, 'AB' as 4241
-							# re 8085 programmers manual p.4-5
+			elif cmd == 'DW':
 
-							if len( e ) == 2:
+				for e in x:
 
-								RAM[ pc ]     = e[ 1 ]
-								RAM[ pc + 1 ] = e[ 0 ]
+					if e == None:
 
-							else:
-							
-								raise Exception( 'derp' )
+						pass  # take up space
 
-						else:						
+					elif isinstance( e, list ):  # ex character array
 
-							lo, hi = getNibbles( e )
+						# reversed??? 'A' stored as 4100, 'AB' as 4241
+						# re 8085 programmers manual p.4-5
 
-							RAM[ pc ]     = lo
-							RAM[ pc + 1 ] = hi
+						if len( e ) == 2:
 
-						pc += 2
+							RAM[ pc ]     = e[ 1 ]
+							RAM[ pc + 1 ] = e[ 0 ]
 
-				elif cmd == 'DS':
+						else:
+						
+							raise Exception( 'derp' )
 
-					nBlocks = x[ 0 ]
+					else:						
 
-					pc += nBlocks
+						lo, hi = getBytes( e )
+
+						RAM[ pc ]     = lo
+						RAM[ pc + 1 ] = hi
+
+					pc += 2
+
+			elif cmd == 'DS':
+
+				nBlocks = x[ 0 ]
+
+				pc += nBlocks
 
 		elif cmd == 'ORG':
 
@@ -425,6 +446,9 @@ def getLabels( commands ):
 			elif cmd in twoImmediate:
 
 				pc += 2
+
+	# pPrintDict( labels )
+	# pPrintDict( labels, True )
 
 	if scheduleSecondPass:
 
@@ -495,7 +519,7 @@ def compileCommand( command, args ):
 
 		instruction = opcodes[ command ][ R ]
 
-		data_lo, data_hi = getNibbles( data )
+		data_lo, data_hi = getBytes( data )
 
 		RAM[ pc ] = int( instruction, 2 )
 
@@ -514,7 +538,7 @@ def compileCommand( command, args ):
 
 		instruction = opcodes[ command ]
 
-		data_lo, data_hi = getNibbles( data )
+		data_lo, data_hi = getBytes( data )
 
 		RAM[ pc ] = int( instruction, 2 )
 
@@ -684,7 +708,7 @@ def parseExpression( s ):
 
 	# expression -> term ( op term )*
 
-	# for arithmetic, being lazy and assuming non-negative
+	# for compiler arithmetic, being lazy and assuming non-negative
 
 	c = s[ 0 ]
 
@@ -698,7 +722,7 @@ def parseExpression( s ):
 	# arithmetic
 	if len( exp ) > 1:
 
-		# print( exp )
+		# print( pc, exp )
 
 		val = parseTerm( exp[ 0 ] )
 
@@ -709,27 +733,39 @@ def parseExpression( s ):
 				op   = exp[ i ]
 				term = parseTerm( exp[ i + 1 ] )
 
-				# print( val, op, term )
+				if term:
 
-				if op == '+':
+					# print( val, op, term )
 
-					val += term
+					if op == '+':
 
-				elif op == '-':
+						val += term
 
-					val -= term
+					elif op == '-':
 
-				elif op == '>>':
+						val -= term
 
-					val >>= term
+					elif op == '/':
 
-				elif op == '&':
+						val = val // term
 
-					val &= term
+					elif op == '>>':
+
+						val >>= term
+
+					elif op == '&':
+
+						val &= term
+
+					else:
+
+						raise Exception( 'derp' )
 
 				else:
 
-					raise Exception( 'derp' )
+					val = None
+
+					break
 
 		return val
 
@@ -742,16 +778,16 @@ def parseArguments( s ):
 
 	# arguments -> expression ( ',' expression )*
 
-	exps = s.split( ',' )
+	args = s.split( ',' )
 
 	byts = []
 
-	for exp in exps:
+	for exp in args:
 
 		byts.append( parseExpression( exp ) )
 		# byts.extend( parseExpression( exp ) )
 
-	return byts
+	return ( byts, len( args ) )
 
 
 def compile_ ( inputFile, RAM_ = None ):
@@ -772,7 +808,8 @@ def compile_ ( inputFile, RAM_ = None ):
 
 	commands_indexed = getLabels( commands )
 
-	# pPrintDict( labels )
+	pPrintDict( labels )
+	# for c in commands_indexed: print( c )
 
 	compileCommands( commands_indexed )
 

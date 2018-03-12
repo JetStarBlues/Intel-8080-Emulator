@@ -445,9 +445,9 @@ instructionLookup = {
 	# Input / Output ---
 
 	# IN port -> 11011011 -> Input
-	0b11011011 : 'IN',
+	0b11011011 : 'IN port',
 	# OUT port -> 11010011 -> Output
-	0b11010011 : 'OUT',
+	0b11010011 : 'OUT port',
 
 
 	# Control ---
@@ -515,4 +515,7 @@ instructionsWithData = {
 	'ORI data' : 1,
 
 	'CPI data' : 1,
+
+	'IN port'  : 1,
+	'OUT port' : 1,
 }

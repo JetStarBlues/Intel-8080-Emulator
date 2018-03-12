@@ -370,7 +370,7 @@ class CPU():
 
 		# Helpers ------------------------------------------
 		self.nBits = 8
-		self.largestInt = 2 ** ( self.nBits - 1 ) - 1
+		self.largestPositiveInt = 2 ** ( self.nBits - 1 ) - 1
 		self.negativeOne = 2 ** self.nBits - 1  # two's complement
 
 		self.flagALU_carry    = 0
@@ -954,13 +954,24 @@ class CPU():
 		z = a + self.negate( b + c )
 
 		# Update carry flag
-		if z > self.negativeOne:
+		# if z > self.negativeOne:
 
-			self.flagALU_carry = 0
+		# 	self.flagALU_carry = 0
+
+		# else:
+
+		# 	self.flagALU_carry = 1
+
+		if ( b + c ) > a:
+
+			self.flagALU_carry = 1
 
 		else:
 
-			self.flagALU_carry = 1
+			self.flagALU_carry = 0
+
+		print( 'gd! {} - ( {} + {} ) = {} and c {}'.format( a, b, c, z, self.flagALU_carry ) )
+		print( 'fneg {}'.format( self.negate( b + c ) ) )
 
 		z &= self.negativeOne  # discard overflow bits
 
@@ -1008,8 +1019,8 @@ class CPU():
 
 	def skip2Bytes( self ):
 
-		z = self.register_PC.read()
-		self.register_PC.write( z + 2 )
+		self.fetchInstruction()
+		self.fetchInstruction()
 
 
 	# Flags ----------------------------------------------------
@@ -1059,7 +1070,7 @@ class CPU():
 
 			self.flagALU_zero = 1
 
-		if value > self.largestInt:  # two's complement
+		if value > self.largestPositiveInt:  # two's complement
 
 			self.flagALU_sign = 1
 
@@ -2066,6 +2077,8 @@ class CPU():
 
 		# Temp for now
 		self.halt = True
+
+		print( 'HLT instruction executed' )
 
 	# NOP -> 00000000 -> 1 -> No operation
 	def NOP( self ): pass
