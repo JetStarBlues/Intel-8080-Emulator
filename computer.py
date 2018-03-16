@@ -41,7 +41,7 @@ class Computer ():
 
 
 		# Debug helpers ---
-		self.dumpFilePath = None
+		self.dumpFolderPath = None
 		self.breakpoint = None
 		self.breakpointReached = False
 
@@ -55,9 +55,29 @@ class Computer ():
 		self.stackBase = None
 
 
-	def loadProgram ( self, programPath ):
+	def loadProgram ( self, programPath, isAssembly=True ):
 
-		compile_( programPath, self.memory )
+		if isAssembly:
+
+			compile_( programPath, self.memory )
+
+		else:
+
+			with open( programPath, 'rb' ) as file:
+
+				idx = 0
+
+				byte = file.read( 1 )
+
+				while byte:
+
+					# print( byte )
+
+					self.memory[ idx ] = int.from_bytes( byte, byteorder='big' )
+
+					idx += 1
+
+					byte = file.read( 1 )
 
 
 	def run ( self, step=False ):
@@ -101,9 +121,7 @@ class Computer ():
 
 		while True:
 
-			if ( self.breakpoint and
-				 ( not self.breakpointReached ) and
-				 ( self.nextPC < self.breakpoint ) ):
+			if ( self.breakpoint and ( not self.breakpointReached ) ):
 
 				# Auto step ---
 
@@ -156,7 +174,7 @@ class Computer ():
 					print( '  p    -> previous' )
 					print( '  quit -> quit'     )
 					print( '  help -> help'     )
-					print( 'The current dump can be found in dumpFilePath/tmp' )
+					print( 'The current dump can be found in dumpFolderPath/tmp' )
 
 				elif uinput == 'quit':
 
@@ -174,11 +192,11 @@ class Computer ():
 			self.nextInstruction = instructionLookup[ self.CPU.read_M( self.nextPC ) ]
 
 			# display
-			filePath = self.dumpFilePath + 'tmp'
+			filePath = self.dumpFolderPath + 'tmp'
 			self.dumpStatusToFile( filePath )
 
 			# store
-			filePath = self.dumpFilePath + str( self.curStep )
+			filePath = self.dumpFolderPath + str( self.curStep )
 			self.dumpStatusToFile( filePath )
 			self.nStepsSaved += 1
 
@@ -191,8 +209,8 @@ class Computer ():
 			# print( 'reading old file' )
 
 			# display stored
-			src = self.dumpFilePath + str( self.curStep )
-			dst = self.dumpFilePath + 'tmp'
+			src = self.dumpFolderPath + str( self.curStep )
+			dst = self.dumpFolderPath + 'tmp'
 			copyfile( src, dst )
 
 

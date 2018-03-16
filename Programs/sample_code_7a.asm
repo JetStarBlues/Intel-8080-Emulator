@@ -20,37 +20,64 @@
 ;	The result is stored at M[FIRST]
 ;
 
-SETUP:			MVI  D,3             ; load with number of bytes
-				CALL MULTIBYTE_ADD
-				HLT
+SETUP:         MVI  D,3             ; load with number of bytes
+               CALL MULTIBYTE_ADD
+               HLT
 
-MULTIBYTE_ADD:	LXI  B,FIRST         ; load address FIRST to BC
-				LXI  H,SECOND        ; load address SECOND to HL
-				XRA  A               ; clear carry bit
+MULTIBYTE_ADD: LXI  B,FIRST         ; load address FIRST to BC
+               LXI  H,SECOND        ; load address SECOND to HL
+               XRA  A               ; clear carry bit
 
-LOOP:		    LDAX B               ; load byte of FIRST to A
-				SBB  M               ; add with carry byte of SECOND
-				STAX B               ; store result at FIRST
-				DCR  D               ; done if D = 0
-				JZ   DONE
-				INX  B               ; point to next byte of FIRST
-				INX  H               ; point to next byte of SECOND
-				JMP  LOOP            ; add next two bytes
-; DONE:			RET
+LOOP:          LDAX B               ; load byte of FIRST to A
+               SBB  M               ; add with carry byte of SECOND
+               STAX B               ; store result at FIRST
+               DCR  D               ; done if D = 0
+               JZ   DONE
+               INX  B               ; point to next byte of FIRST
+               INX  H               ; point to next byte of SECOND
+               JMP  LOOP            ; add next two bytes
+; DONE:	         RET
 
-; put z in A reg, then
-; send contents of A reg to IO device 0
-DONE:  LXI H,FIRST+2  ; send z first byte
-       MOV A,M
-       OUT 0
-       LXI H,FIRST+1  ; send z second byte
-       MOV A,M
-       OUT 0
-       LXI H,FIRST    ; send z third byte
-       MOV A,M
-       OUT 0
+
+; Display result ---------------------------
+
+; Send result to IO device 0
+DONE:  LXI  H,FIRST+2  ; send z first byte
+       MOV  A,M
+       CALL BYTEO
+       DCX  H          ; send z second byte
+       MOV  A,M
+       CALL BYTEO
+       DCX  H          ; send z third byte
+       MOV  A,M
+       CALL BYTEO
+       HLT
+
+
+; Print number as ASCII snippet. From,
+;  MICROCOSM ASSOCIATES  8080/8085 CPU DIAGNOSTIC VERSION 1.0  (C) 1980
+PCHAR: OUT  0
        RET
 
+BYTEO: PUSH PSW
+       CALL BYTO1
+       CALL PCHAR
+       POP  PSW
+       CALL BYTO2
+       JMP  PCHAR
+BYTO1: RRC
+       RRC
+       RRC
+       RRC
+BYTO2: ANI  0FH
+       CPI  0AH
+       JM   BYTO3
+       ADI  7
+BYTO3: ADI  30H
+       RET
+
+
+; ----------------------------------------
 
 SECOND: DB 8AH
         DB 0AFH
@@ -59,34 +86,3 @@ SECOND: DB 8AH
 FIRST:  DB 90H
         DB 0BAH
         DB 84H
-
-
-;
-;	Final Binary
-;
-; 00010110  // MVI D, 3
-; 00000011
-; 11001101  // CALL MULTIBYTE_ADD
-; 00000110  //  6
-; 00000000
-; 01110110  // HLT
-; 00000001  // LXI BC, FIRST  // FIRST = 0
-; 00000000
-; 00000000
-; 00100001  // LXI HL, SECOND  // SECOND = 10
-; 00001010
-; 00000000
-; 10101111  // XRA A
-; 00001010  // LDAX BC
-; 10011110  // SBB M
-; 00000010  // STAX BC
-; 00010101  // DCR D
-; 11001010  // JZ DONE
-; 00011001  //  25
-; 00000000
-; 00000011  // INX BC
-; 00100011  // INX HL
-; 11000011  // JMP MADD_LOOP
-; 00001101  //  13
-; 00000000
-; 11001001  // RET

@@ -1,0 +1,24 @@
+  1 REM https://www.atariarchives.org/basicgames/showpage.php?page=172
+  2 PRINT "TIC TAC TOE"
+  9 PRINT "THE BOARD IS NUMBERED:"
+ 10 PRINT " 1 2 3"
+ 12 PRINT " 4 5 6"
+ 14 PRINT " 7 8 9"
+ 16 PRINT
+ 17 PRINT
+ 18 PRINT
+ 50 INPUT "DO YOU WANT 'X'(1) OR 'O'(0)"C
+ 55 IF C = 1 GOTO 61
+ 60 LET P = 0
+ 61 LET Q = 1
+100 LET G = -1; H = 1
+101 IF @(5) # 0 GOTO 103
+102 @(5) = - 1; GOTO 195
+103 IF @(5) # 1 GOTO 106
+104 IF @(1) # 0 GOTO 110
+105 @(1) = -1; GOTO 195
+106 IF ( @(2) = 1 ) + ( @(1) = 0 ) = 2 GOTO 181
+
+110 REM
+181 REM
+195 REM

@@ -16,8 +16,8 @@
 ;	The result is stored at M[FIRST]
 ;
 
-FIRST EQU 0
-SECOND EQU 10
+FIRST EQU 500
+SECOND EQU 510
 
 INIT:          MVI D,3         ; load with number of bytes
 
@@ -50,42 +50,39 @@ LOOP:          LDAX B          ; load byte of FIRST to A
 ; DONE:          HLT
 
 
-; put z in A reg, then
-; send contents of A reg to IO device 0
-DONE:  LXI H,FIRST+2  ; send z first byte
-       MOV A,M
-       OUT 0
-       LXI H,FIRST+1  ; send z second byte
-       MOV A,M
-       OUT 0
-       LXI H,FIRST    ; send z third byte
-       MOV A,M
-       OUT 0
+; Display result ---------------------------
+
+; Send result to IO device 0
+DONE:  LXI  H,FIRST+2  ; send z first byte
+       MOV  A,M
+       CALL BYTEO
+       DCX  H          ; send z second byte
+       MOV  A,M
+       CALL BYTEO
+       DCX  H          ; send z third byte
+       MOV  A,M
+       CALL BYTEO
        HLT
 
 
-;
-;	Final Binary
-;
-; 00010110  // MVI D, 3
-; 00000011
-; 00000001  // LXI BC, FIRST  // FIRST = 0
-; 00000000
-; 00000000
-; 00100001  // LXI HL, SECOND  // SECOND = 10
-; 00001010
-; 00000000
-; 10101111  // XRA A
-; 00001010  // LDAX BC
-; 10001110  // ADC M
-; 00000010  // STAX BC
-; 00010101  // DCR D
-; 11001010  // JZ DONE
-; 00010101  //  21
-; 00000000
-; 00000011  // INX BC
-; 00100011  // INX HL
-; 11000011  // JMP LOOP
-; 00001001  //  9
-; 00000000
-; 01110110  // HLT
+; Print number as ASCII snippet. From,
+;  MICROCOSM ASSOCIATES  8080/8085 CPU DIAGNOSTIC VERSION 1.0  (C) 1980
+PCHAR: OUT  0
+       RET
+
+BYTEO: PUSH PSW
+       CALL BYTO1
+       CALL PCHAR
+       POP  PSW
+       CALL BYTO2
+       JMP  PCHAR
+BYTO1: RRC
+       RRC
+       RRC
+       RRC
+BYTO2: ANI  0FH
+       CPI  0AH
+       JM   BYTO3
+       ADI  7
+BYTO3: ADI  30H
+       RET

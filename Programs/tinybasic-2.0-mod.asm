@@ -74,6 +74,7 @@ SS1:    LDAX D                          ;*** IGNBLK/RST 5 ***     ; 40
 ;
         POP  PSW                        ;*** FINISH/RST 6 ***     ; 48
         CALL FIN                        ;CHECK END OF COMMAND     ; 49, 50, 51
+; HLT  ; JK, TODO DEBUG PRINT w comma
         JMP  QWHAT                      ;PRINT "WHAT?" IF WRONG   ; 52, 53, 54
         DB   'G'                                                  ; 55
 ;
@@ -367,7 +368,8 @@ LS1:    JC   RSTART                     ;C:PASSED TXTUNF
 ;
 PRINT:  MVI  C,6                        ;C = # OF SPACES
         RST  1                          ;IF NULL LIST & ";"
-        DB   3BH
+        ; DB   ';'
+        DB   3BH                        ; JK, simple assembler trips on char rep
         DB   PR2-$-1
         CALL CRLF                       ;GIVE CR-LF AND
         JMP  RUNSML                     ;CONTINUE SAME LINE
@@ -385,7 +387,8 @@ PR0:    RST  1                          ;ELSE IS IT FORMAT?
 PR1:    CALL QTSTG                      ;OR IS IT A STRING?
         JMP  PR8                        ;IF NOT, MUST BE EXPR.
 PR3:    RST  1                          ;IF ",", GO FIND NEXT
-        DB   ','
+        ; DB   ','
+        DB   2CH                        ; JK, simple assembler trips on char rep
         DB   PR6-$-1
         CALL FIN                        ;IN THE LIST.
         JMP  PR0                        ;LIST CONTINUES
@@ -675,7 +678,8 @@ IP3:    PUSH D                          ;SAVE TEXT POINTER
         POP  D                          ;AND OLD TEXT POINTER
 IP4:    POP  PSW                        ;PURGE JUNK IN STACK
         RST  1                          ;IS NEXT CH. ','?
-        DB   ','
+        ; DB   ','
+        DB   2CH                        ; JK, simple assembler trips on char rep
         DB   IP5-$-1
         JMP  IP1                        ;YES, MORE ITEMS.
 IP5:    RST  6
@@ -686,7 +690,8 @@ DEFLT:  LDAX D                          ;***  DEFLT ***
 ;
 LET:    CALL SETVAL                     ;*** LET ***
         RST  1                          ;SET VALUE TO VAR.
-        DB   ','
+        ; DB   ','
+        DB   2CH                        ; JK, simple assembler trips on char rep
         DB   LT1-$-1
         JMP  LET                        ;ITEM BY ITEM
 LT1:    RST  6                          ;UNTIL FINISH
@@ -964,8 +969,8 @@ CHGSGN: MOV  A,H                        ;*** CHGSGN ***
         MOV  L,A
         INX  H
         POP  PSW
-        XRA  H
-        JP   QHOW
+;        XRA  H                         ; JK, No idea what does but commented it out
+;        JP   QHOW                      ; JK, as gives error when subtracting zero
         MOV  A,B                        ;AND ALSO FLIP B
         XRI  80H
         MOV  B,A
@@ -1635,13 +1640,17 @@ LOPPT:  DS   2                          ;TEXT POINTER            ; 1010, 1011
 RANPNT: DS   2                          ;RANDOM NUMBER POINTER   ; 1012, 1013
 TXTUNF: DS   2                          ;->UNFILLED TEXT AREA    ; 1014, 1015
 TXTBGN: DS   2                          ;TEXT SAVE AREA BEGINS   ; 1016, 1017
-        ORG  1366H
+;        ORG  1366H
+        ORG  0C000H
 TXTEND: DS   0                          ;TEXT SAVE AREA ENDS     ; 1366
 VARBGN: DS   55                         ;VARIABLE @(0)           ; 1366
-BUFFER: DS   64                         ;INPUT BUFFER            ; 139D
+; BUFFER: DS   64                       ;INPUT BUFFER            ; 139D
+BUFFER: DS   255                        ; JK, plenty memory to spare
+        DS   255                        ; JK, plenty memory to spare
 BUFEND: DS   1                          ;BUFFER ENDS             ; 13DD
 STKLMT: DS   1                          ;TOP LIMIT FOR STACK     ; 13DE
-        ORG  1400H
+;        ORG  1400H
+        ORG  0D000H
 STACK:  DS   0                          ;STACK STARTS HERE       ; 1400
 ;
 CR      EQU  0DH

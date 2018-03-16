@@ -1067,11 +1067,6 @@ class CPU():
 
 		self.updateALUFlags_Register()
 
-		# print( '{:<8}{}'.format( 'carry',  c.flagALU_carry ) )
-		# print( '{:<8}{}'.format( 'zero',   c.flagALU_zero ) )
-		# print( '{:<8}{}'.format( 'sign',   c.flagALU_sign ) )
-		# print( '{:<8}{}'.format( 'parity', c.flagALU_parity ) )
-
 
 	# Run ------------------------------------------------------
 

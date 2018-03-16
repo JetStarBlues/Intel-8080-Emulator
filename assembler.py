@@ -5,6 +5,9 @@
 #     Barebones assembler for the Intel 8080 Emulator
 #
 #     Do not use it if you don't have to!
+#
+#     For example, consider using 'Pretty 8080 Assembler':
+#      http://sensi.org/~svo/i8080/
 # 
 #  Attribution:
 # 
@@ -32,8 +35,8 @@ ranSecondPass = False
 completedPasses = False
 nPasses = 0
 
-ops = [ '+', '-', '/', '>>', '&' ]
-opsRe = '(\+|\-|/|>>|&)'
+ops = [ '+', '-', '/', '>>', '<<', '&', '^' ]
+opsRe = '(\+|\-|/|>>|<<|&|\^)'
 
 registers = {
 
@@ -233,7 +236,7 @@ def extractCommands( inputFile ):
 
 		for line in file:
 
-			# print( line[:-1] )
+			# print( line[ : - 1 ] )
 
 			inString = False
 			strTok = ''
@@ -771,9 +774,17 @@ def parseExpression( s ):
 
 						val >>= term
 
+					elif op == '<<':
+
+						val <<= term
+
 					elif op == '&':
 
 						val &= term
+
+					elif op == '^':
+
+						val ^= term
 
 					else:
 
@@ -826,7 +837,7 @@ def compile_ ( inputFile, RAM_ = None ):
 
 	commands_indexed = getLabels( commands )
 
-	pPrintDict( labels )
+	# pPrintDict( labels )
 	# for c in commands_indexed: print( c )
 
 	compileCommands( commands_indexed )

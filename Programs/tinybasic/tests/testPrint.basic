@@ -1,0 +1,5 @@
+1 PRINT "Hi","There"
+2 REM PRINT "How";"Goes"
+3 PRINT "Ola",
+4 PRINT #2, 5
+RUN

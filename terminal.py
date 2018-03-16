@@ -154,13 +154,16 @@ class Terminal():
 
 			print( 'tkRaw ->', keyCode )
 
+		if keyCode == 0:
+
+			return
+
 		if keyCode >= 32 and keyCode <= 126:
 
 			self.displayBuffer += chr( keyCode )
 
 		elif keyCode == self.K_CR:
 
-			# self.displayBuffer += 'wtf'
 			pass
 
 		elif keyCode == self.K_LF:
@@ -211,7 +214,12 @@ class Terminal():
 		self.tkCanvas.configure( yscrollcommand = scrollbar.set )
 
 		frame = tkinter.Frame( self.tkCanvas )
-		self.tkCanvasFrame = self.tkCanvas.create_window( ( 0, 0 ), window = frame, anchor = 'nw' )
+		self.tkCanvasFrame = self.tkCanvas.create_window(
+
+			( 0, 0 ),
+			window = frame,
+			anchor = 'nw'
+		)
 
 		self.tkTextBox = tkinter.Label( frame )
 		self.tkTextBox.pack( expand = True, fill = 'both' )
@@ -243,6 +251,8 @@ class Terminal():
 	def updateDisplay( self ):
 
 		self.tkTextBox[ 'text' ] = self.displayBuffer
+
+		self.tkCanvas.yview_moveto( 1 )  # scroll to bottom (show latest)
 
 
 # t = Terminal()

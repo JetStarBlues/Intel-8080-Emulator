@@ -18,30 +18,35 @@ SBB D           ; Subtract the second high-byte from the accumulator
 MOV H,A         ; Move the answer to the high-byte of the result
 ; HLT
 
-; put z in A reg, then
-; send contents of A reg to IO device 0
-DONE:  MOV A,H
-       OUT 0    ; send z hi byte (7)
-       MOV A,L
-       OUT 0    ; send z lo byte (226)
+
+; Display result ---------------------------
+
+; Send result to IO device 0
+DONE:  MOV  A,H  ; send z hi byte (7)
+       CALL BYTEO
+       MOV  A,L  ; send z lo byte (226)
+       CALL BYTEO
        HLT
 
 
-;
-;	Final Binary
-;
-; 00000001  // LXI BC, 0x22DB
-; 11011011
-; 00100010
-; 00010001  // LXI DE, 0x1AF9
-; 11111001
-; 00011010
-; 00110111  // STC
-; 00111111  // CMC
-; 01111001  // MOV A, C
-; 10011011  // SBB E
-; 01101111  // MOV L, A
-; 01111000  // MOV A, B
-; 10011010  // SBB D
-; 01100111  // MOV H, A
-; 01110110  // HLT
+; Print number as ASCII snippet. From,
+;  MICROCOSM ASSOCIATES  8080/8085 CPU DIAGNOSTIC VERSION 1.0  (C) 1980
+PCHAR: OUT  0
+       RET
+
+BYTEO: PUSH PSW
+       CALL BYTO1
+       CALL PCHAR
+       POP  PSW
+       CALL BYTO2
+       JMP  PCHAR
+BYTO1: RRC
+       RRC
+       RRC
+       RRC
+BYTO2: ANI  0FH
+       CPI  0AH
+       JM   BYTO3
+       ADI  7
+BYTO3: ADI  30H
+       RET

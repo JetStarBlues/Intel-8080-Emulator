@@ -15,7 +15,7 @@ MULT0: MOV A,C
        RAR
        MOV C,A
        DCR E
-       JZ DONE
+       JZ  DONE
        MOV A,B
        JNC MULT1
        ADD D
@@ -24,41 +24,37 @@ MULT1: RAR
        JMP MULT0
 ; DONE:  HLT
 
-; put z in A reg, then
-; send contents of A reg to IO device 0
-DONE:  MOV A,B
-       OUT 0    ; send z hi byte (9)
-       MOV A,C
-       OUT 0    ; send z lo byte (216)
+
+; Display result ---------------------------
+
+; Send result to IO device 0
+DONE:  MOV  A,B
+       ; OUT  0    ; send z hi byte (9)
+       CALL BYTEO
+       MOV  A,C
+       ; OUT  0    ; send z lo byte (216)
+       CALL BYTEO
        HLT
 
 
-;
-;	Final Binary
-;
-; 00010110  // MVI D, 42
-; 00101010
-; 00001110  // MVI C, 60
-; 00111100
-; 00000110  // MVI B, 0
-; 00000000
-; 00011110  // MVI E, 9
-; 00001001
-; 01111001  // MOV A, C
-; 00011111  // RAR
-; 01001111  // MOV C, A
-; 00011101  // DCR E
-; 11001010  // JZ DONE
-; 00011001  //  25
-; 00000000
-; 01111000  // MOV A, B
-; 11010010  // JNC MULT1
-; 00010100  //  20
-; 00000000
-; 10000010  // ADD D
-; 00011111  // RAR
-; 01000111  // MOV B, A
-; 11000011  // JMP MULT0
-; 00001000  //  8
-; 00000000
-; 01110110  // HLT
+; Print number as ASCII snippet. From,
+;  MICROCOSM ASSOCIATES  8080/8085 CPU DIAGNOSTIC VERSION 1.0  (C) 1980
+PCHAR: OUT  0
+       RET
+
+BYTEO: PUSH PSW
+       CALL BYTO1
+       CALL PCHAR
+       POP  PSW
+       CALL BYTO2
+       JMP  PCHAR
+BYTO1: RRC
+       RRC
+       RRC
+       RRC
+BYTO2: ANI  0FH
+       CPI  0AH
+       JM   BYTO3
+       ADI  7
+BYTO3: ADI  30H
+       RET

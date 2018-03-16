@@ -10,9 +10,9 @@
 ;	 https://www.youtube.com/watch?v=a73ZXDJtU48
 ;
 
-      MVI B,12    ; Counter for number of items want to generate (2 + x)
-      LXI H,0     ; Memory base address where results will be stored
-      MVI M,0	  ; Set Memory[HL] = 0
+      MVI B,11    ; Counter for number of items want to generate (2 + x)
+      LXI H,1000  ; Memory base address where results will be stored
+      MVI M,0	; Set Memory[HL] = 0
       INX H       ; HL += 1
       MVI M,1     ; Set Memory[HL] = 1
 LOOP: DCX H       ; HL -= 1
@@ -23,29 +23,34 @@ LOOP: DCX H       ; HL -= 1
       MOV M,A     ; Memory[HL] = A,   next fibNum
       DCR B       ; decrement counter
       JNZ LOOP    ; loop if counter != zero
-      HLT
+; DONE: HLT
 
-;
-;	Final Binary
-;
-; 00000110  // MVI B, 12
-; 00001100
-; 00100001  // LXI HL, 0
-; 00000000
-; 00000000
-; 00110110  // MVI M, 0
-; 00000000
-; 00100011  // INX HL
-; 00110110  // MVI M, 1
-; 00000001
-; 00101011  // DCX HL
-; 01111110  // MOV A, M
-; 00100011  // INX HL
-; 10000110  // ADD M
-; 00100011  // INX HL
-; 01110111  // MOV M, A
-; 00000101  // DCR B
-; 11000010  // JNZ LOOP
-; 00001010  // 10
-; 00000000
-; 01110110  // HLT
+
+; Display result ---------------------------
+
+; Send result to IO device 0
+DONE:  MOV A,M
+       CALL BYTEO
+       HLT
+
+; Print number as ASCII snippet. From,
+;  MICROCOSM ASSOCIATES  8080/8085 CPU DIAGNOSTIC VERSION 1.0  (C) 1980
+PCHAR: OUT  0
+       RET
+
+BYTEO: PUSH PSW
+       CALL BYTO1
+       CALL PCHAR
+       POP  PSW
+       CALL BYTO2
+       JMP  PCHAR
+BYTO1: RRC
+       RRC
+       RRC
+       RRC
+BYTO2: ANI  0FH
+       CPI  0AH
+       JM   BYTO3
+       ADI  7
+BYTO3: ADI  30H
+       RET
