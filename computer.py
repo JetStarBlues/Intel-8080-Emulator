@@ -41,6 +41,7 @@ class Computer ():
 
 
 		# Debug helpers ---
+		self.printHowTo = True
 		self.dumpFolderPath = None
 		self.breakpoint = None
 		self.breakpointReached = False
@@ -114,6 +115,22 @@ class Computer ():
 
 		# self.dumpStatus()  # debug
 
+	def printDebuggerHelp ( self ):
+
+		print( '\n---' )
+		print( 'The debugger dumps the status of the CPU and memory' )
+		print( 'following execution of an instruction.' )
+		print( 'The dump of the current instruction can be found' )
+		print( 'at dumpFolderPath/tmp. Ideally you will have this' )
+		print( 'file open as you step through the program to view' )
+		print( 'the current status.' )
+		print()
+		print( 'To step through the program, type:' )
+		print( '  n    -> next'     )
+		print( '  p    -> previous' )
+		print( '  quit -> quit'     )
+		print( '  help -> help'     )
+		print()
 
 	def run_debugMode ( self ):
 
@@ -143,6 +160,12 @@ class Computer ():
 
 				# Manual step ---
 
+				if self.printHowTo:
+
+					self.printDebuggerHelp()
+
+					self.printHowTo = False
+
 				uinput = input( '> ' )
 
 				if uinput == 'n':
@@ -169,12 +192,7 @@ class Computer ():
 
 				elif uinput == '?' or uinput == 'help':
 
-					print( 'To navigate, type:' )
-					print( '  n    -> next'     )
-					print( '  p    -> previous' )
-					print( '  quit -> quit'     )
-					print( '  help -> help'     )
-					print( 'The current dump can be found in dumpFolderPath/tmp' )
+					self.printDebuggerHelp()
 
 				elif uinput == 'quit':
 

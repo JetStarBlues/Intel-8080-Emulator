@@ -28,8 +28,10 @@ c.dumpFolderPath = dumpFolderPath
 
 # c.terminal.debugMode = True
 
-c.breakpoint = 391
-# c.breakpoint = 1e9  # infinity to allow stepping when reach HLT
+c.breakpoint = None  # manual stepping
+# c.breakpoint = 391  # auto step until reach breakpoint, then switches to manual stepping
+# c.breakpoint = 1e9  # infinity to allow auto stepping until reach HLT, then switches to manual stepping
+
 
 # textSourcePath = 'Programs/tinybasic/needMoreSupport/TicTacToeTB.basic'
 # textSourcePath = 'Programs/tinybasic/needMoreSupport/LifeTB.basic'
@@ -45,5 +47,5 @@ textSourcePath = 'Programs/tinybasic/EuphoriaTB.basic'
 # c.terminal.tooLazyToType( textSourcePath )
 
 
-c.run()
-# c.run( step=True )  # debug
+# c.run()
+c.run( step=True )  # debug
