@@ -42,7 +42,7 @@ textSourcePath = 'Programs/tinybasic/EuphoriaTB.basic'
 # textSourcePath = 'Programs/tinybasic/wip/tictactoeTB.basic'
 
 
-c.terminal.tooLazyToType( textSourcePath )
+# c.terminal.tooLazyToType( textSourcePath )
 
 
 c.run()

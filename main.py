@@ -10,10 +10,7 @@ c.loadProgram( programPath )
 
 
 # textSourcePath = 'Programs/tinybasic/helloTB.basic'
-# textSourcePath = 'Programs/tinybasic/TicTacToeTB.basic'
-# textSourcePath = 'Programs/tinybasic/LifeTB.basic'
 # textSourcePath = 'Programs/tinybasic/EuphoriaTB.basic'
-# textSourcePath = 'Programs/tinybasic/TinyAdventureTB.basic'
 
 
 # c.terminal.tooLazyToType( textSourcePath )
