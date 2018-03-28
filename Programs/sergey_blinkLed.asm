@@ -1,4 +1,6 @@
 ; -----------------------------------------------------
+; From http://www.malinov.com/Home/sergeys-projects/minimax8085
+;
 ; Blink a LED on SOD?
 ; -----------------------------------------------------
 

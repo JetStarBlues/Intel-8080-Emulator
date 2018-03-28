@@ -1,4 +1,6 @@
 ; ------------------------------------------------------------------------
+; From http://www.malinov.com/Home/sergeys-projects/minimax8085
+;
 ; USART (8251) test code
 ;  Prints "8085" to the serial port, and then echoes received characters.
 ; ------------------------------------------------------------------------
