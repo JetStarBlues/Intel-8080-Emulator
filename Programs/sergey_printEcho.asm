@@ -1,54 +1,15 @@
-; -----------------------------------------------------
-; Blink a LED on SOD?
-; -----------------------------------------------------
-
-START:
-
-	LXI H, 0C000h   ; Load 0xc0000 to stack pointer?
-	SPHL
-
-FLASH:
-
-	MVI A, 0C0h  ; ??
-	SIM          ; set interrupt mask??
-	CALL DELAY
-	MVI A, 040h  ; ??
-	SIM          ; ??
-	CALL DELAY
-	JMP FLASH
-
-DELAY:
-	
-	MVI A, 0FFh
-	MOV B, A
-
-PT1:
-
-	DCR A
-
-PT2:
-	
-	DCR B
-	JNZ PT2
-	CPI 00h
-	JNZ PT1
-	RET	     ; Return to HL when done ??
-
-
-
-
-; -----------------------------------------------------
+; ------------------------------------------------------------------------
 ; USART (8251) test code
 ;  Prints "8085" to the serial port, and then echoes received characters.
-; -----------------------------------------------------
+; ------------------------------------------------------------------------
 
 ; USART registers
-USART_DATA EQU 08h  ; ?
-USART_CMD  EQU 09h  ; ?
+USART_DATA EQU 08h
+USART_CMD  EQU 09h
 
 START:
 
-	LXI H, 0C000h   ; Load 0xc0000 to stack pointer?
+	LXI H, 0C000h   ; Load 0xC0000 to stack pointer?
 	SPHL
 	CALL USART_INIT
 
@@ -122,6 +83,6 @@ USART_OUT:
 	IN  	USART_CMD  ; Read USART status
 	ANI 	1          ; Test TX_ready bit
 	JZ  	USART_OUT  ; If zero, wait till ready
-	MOV 	A, C       ; Else, write the character  //?? So OUT reads from A??
+	MOV 	A, C       ; Else, write the character
 	OUT 	USART_DATA
 	RET

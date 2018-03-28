@@ -28,7 +28,7 @@
 ;         DB   WHERE & 0FFH
 ;         ENDM
 ;
-UARTPN  EQU 0                           ; JK, IO port number
+TERMPN  EQU 0                           ; JK, IO port number of terminal
 ;
         ORG  0H
 START:  LXI  SP,STACK                   ;*** COLD START ***       ; 0, 1, 2
@@ -1410,7 +1410,7 @@ OC3:    ; IN   0FBH                       ;COME HERE TO DO OUTPUT
         ; ANI  1H                         ;STATUS BIT
         ; JZ   OC3                        ;NOT READY, WAIT
         ; POP  PSW                        ;READY, GET OLD A BACK
-        OUT  UARTPN                     ;AND SEND IT OUT
+        OUT  TERMPN                     ;AND SEND IT OUT
         CPI  CR                         ;WAS IT CR?
         RNZ                             ;NO, FINISHED
         MVI  A,LF                       ;YES, WE SEND LF TOO
@@ -1422,7 +1422,7 @@ CHKIO:  ; IN   0FBH                       ;*** CHKIO ***
         ; NOP                             ;STATUS BIT FLIPPED?
         ; ANI  2H                         ;MASK STATUS BIT
         ; RZ                              ;NOT READY, RETURN "Z"
-        IN   UARTPN                     ;READY, READ DATA
+        IN   TERMPN                     ;READY, READ DATA
         ; ANI  7FH                        ;MASK BIT 7 OFF
         ; CPI  0FH                        ;IS IT CONTROL-O?
         ; JNZ  CI1                        ;NO, MORE CHECKING

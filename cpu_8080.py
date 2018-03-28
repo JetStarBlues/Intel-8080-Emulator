@@ -861,7 +861,7 @@ class CPU():
 
 		return data
 
-	def transmit( self, data ):
+	def transmit( self, data ):  # OUT command
 
 		# Bypass need for UART and send data directly to IO device
 

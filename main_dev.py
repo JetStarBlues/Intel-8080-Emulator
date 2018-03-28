@@ -21,7 +21,7 @@ c.loadProgram( programPath )
 # c.loadProgram( programPath, isAssembly=False )
 
 
-dumpFolderPath = '../../../tmp2/'
+dumpFolderPath = '../../../tmp/'
 c.dumpFolderPath = dumpFolderPath
 
 # c.dumpMemory()
@@ -37,9 +37,9 @@ c.breakpoint = None  # manual stepping
 # textSourcePath = 'Programs/tinybasic/needMoreSupport/LifeTB.basic'
 # textSourcePath = 'Programs/tinybasic/needMoreSupport/TinyAdventureTB.basic'
 # textSourcePath = 'Programs/tinybasic/gcta.basic'
-# textSourcePath = 'Programs/tinybasic/helloTB.basic'
+textSourcePath = 'Programs/tinybasic/helloTB.basic'
 # textSourcePath = 'Programs/tinybasic/EuphoriaTB_mod.basic'
-textSourcePath = 'Programs/tinybasic/EuphoriaTB.basic'
+# textSourcePath = 'Programs/tinybasic/EuphoriaTB.basic'
 # textSourcePath = 'Programs/tinybasic/tests/testPrint.basic'
 # textSourcePath = 'Programs/tinybasic/wip/tictactoeTB.basic'
 
@@ -48,4 +48,4 @@ textSourcePath = 'Programs/tinybasic/EuphoriaTB.basic'
 
 
 # c.run()
-c.run( step=True )  # debug
+c.run( step=True )  # debug mode
