@@ -74,7 +74,6 @@ SS1:    LDAX D                          ;*** IGNBLK/RST 5 ***     ; 40
 ;
         POP  PSW                        ;*** FINISH/RST 6 ***     ; 48
         CALL FIN                        ;CHECK END OF COMMAND     ; 49, 50, 51
-; HLT  ; JK, TODO DEBUG PRINT w comma
         JMP  QWHAT                      ;PRINT "WHAT?" IF WRONG   ; 52, 53, 54
         DB   'G'                                                  ; 55
 ;
